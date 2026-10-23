@@ -893,6 +893,33 @@
     }
 
 
+    /* 발음 코치: 발음기호 · 따라 말하기 */
+    .coach-btn {
+      display: inline-flex; align-items: center; gap: 4px; min-height: 34px; padding: 6px 12px;
+      border-radius: 999px; border: 1px solid var(--border); background: #fff; color: var(--ink);
+      font-size: 0.78rem; font-weight: 700; cursor: pointer; user-select: none; -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .coach-btn:active { transform: scale(0.96); }
+    .coach-btn:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 1px; }
+    .coach-btn.listening { background: #c0392b; border-color: #c0392b; color: #fff; animation: ttsPulse 1.1s ease-in-out infinite; }
+    .ipa-block { margin-top: 6px; font-size: 0.74rem; line-height: 1.45; color: var(--ink-soft); }
+    .ipa-line { font-family: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode", "Segoe UI", system-ui, sans-serif; font-size: 0.82rem; color: var(--ink); overflow-wrap: anywhere; }
+    .ipa-tips { margin-top: 3px; }
+    .ipa-tips strong { display: block; font-size: 0.7rem; margin-bottom: 1px; }
+    .ipa-inline { font-family: "Charis SIL", "Segoe UI", system-ui, sans-serif; }
+    .coach-out { margin-top: 8px; padding: 8px 10px; border-radius: 12px; background: #f6f1e7; font-size: 0.78rem; line-height: 1.5; color: var(--ink); }
+    .coach-out[hidden] { display: none; }
+    .coach-out.err { background: #fdecea; color: #922b21; }
+    .coach-score { font-weight: 800; font-size: 0.86rem; }
+    .coach-score.great { color: #1e8449; } .coach-score.good { color: #2e7d32; } .coach-score.mid { color: #b9770e; } .coach-score.low { color: #c0392b; }
+    .coach-words { margin-top: 4px; font-size: 0.9rem; font-weight: 700; }
+    .cw { padding: 0 2px; border-radius: 4px; }
+    .cw-ok { color: #1e8449; } .cw-near { color: #b9770e; background: #fff3d6; } .cw-miss { color: #c0392b; background: #fde3e0; text-decoration: underline wavy; }
+    .coach-heard { margin-top: 3px; color: var(--ink-soft); }
+    .coach-fix { margin: 4px 0 0; padding-left: 18px; }
+    .coach-note { margin-top: 5px; font-size: 0.68rem; color: var(--ink-soft); }
+
     /* ===== 발음 듣기 (TTS) ===== */
     .tts-row {
       display: flex;
@@ -1169,7 +1196,7 @@
     </div>
 
     <div class="panel" id="ttsPanel">
-      <div class="panel-title"><span>발음 듣기 🔊</span></div>
+      <div class="panel-title"><span>발음 듣기·연습 🔊🎤</span></div>
       <div class="daily-row" style="margin-top:0">
         <span class="row-label">읽기 속도</span>
         <div class="chip-row" id="ttsRateChips"></div>
@@ -1178,8 +1205,17 @@
         <span class="row-label">뒤집으면 자동 재생</span>
         <div class="chip-row" id="ttsAutoChips"></div>
       </div>
+      <div class="daily-row">
+        <span class="row-label">음성 종류</span>
+        <div class="chip-row" id="ttsEngineChips"></div>
+      </div>
+      <div class="daily-row">
+        <span class="row-label">발음기호·주의 소리</span>
+        <div class="chip-row" id="ttsIpaChips"></div>
+      </div>
       <div class="tts-voices" id="ttsVoiceInfo"></div>
       <div class="tts-hint" id="ttsHint" hidden></div>
+      <div class="tts-voices" id="coachInfo"></div>
     </div>
 
     <div class="panel" id="csvPanel">
@@ -1237,6 +1273,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="cards.js"></script>
+  <script src="audio/audio-data.js"></script>
   <script>
     /* cards.js 우선; 없으면 아래 내장 데이터 사용 (동기화 유지) */
     const EMBEDDED_TOPICS = [
@@ -4467,8 +4504,36 @@
     }
 
     /* RFC4180-ish CSV parse (quoted fields, "" escapes, UTF-8 BOM) */
+    function csvDetectDelim(text) {
+      /* 첫 줄(따옴표 밖)에서 쉼표·세미콜론·탭 중 가장 많은 구분자를 고름 (엑셀 지역 설정에 따라 ; 로 저장되기도 함) */
+      const cnt = { ",": 0, ";": 0, "\t": 0 };
+      let q = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (c === '"') q = !q;
+        else if (!q && c === "\n") break;
+        else if (!q && c in cnt) cnt[c] += 1;
+      }
+      let best = ",";
+      [";", "\t"].forEach((d) => { if (cnt[d] > cnt[best]) best = d; });
+      return best;
+    }
+    function decodeCsvBuffer(buf) {
+      /* UTF-8(BOM 포함) 우선, 아니면 한국어 엑셀의 CP949(EUC-KR) 로 읽기 */
+      try { return new TextDecoder("utf-8", { fatal: true }).decode(buf); } catch (_) {}
+      try { return new TextDecoder("euc-kr").decode(buf); } catch (_) {}
+      return new TextDecoder("utf-8").decode(buf);
+    }
+    function csvCardId(parts, seen) {
+      let base = "csv-" + cyrb53(parts.join("\u0001")).toString(36);
+      let id = base, n = 2;
+      while (seen.has(id)) id = base + "-" + (n++);
+      seen.add(id);
+      return id;
+    }
     function parseCsv(text) {
       if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      const delim = csvDetectDelim(text);
       const rows = [];
       let row = [];
       let field = "";
@@ -4484,7 +4549,7 @@
           field += ch; i += 1; continue;
         }
         if (ch === '"') { inQuotes = true; i += 1; continue; }
-        if (ch === ',') { row.push(field); field = ""; i += 1; continue; }
+        if (ch === delim) { row.push(field); field = ""; i += 1; continue; }
         if (ch === '\r') { i += 1; continue; }
         if (ch === '\n') {
           row.push(field); rows.push(row); row = []; field = ""; i += 1; continue;
@@ -4541,6 +4606,7 @@
         throw new Error("필수 열이 없어요: " + missing.join(", ") + " (헤더: " + header.join(" | ") + ")");
       }
       const out = [];
+      const seenIds = new Set();
       for (let r = 1; r < rows.length; r++) {
         const cells = rows[r];
         const get = (k) => String(cells[col[k]] != null ? cells[col[k]] : "").trim();
@@ -4562,7 +4628,7 @@
           throw new Error((r + 1) + "행: topics(주제)가 비어 있어요. 예: 일상|직장");
         }
         out.push({
-          id: "csv-" + r,
+          id: csvCardId([meaningKo, casualUS, formalEn, casualUK], seenIds),
           topics,
           difficulty,
           meaningKo,
@@ -4855,7 +4921,7 @@
           <div class="variant-text">${escapeHtml(r.text)}</div>
           ${ttsButtonsHtml(card, r.id)}
         </div>
-      `).join("") + (state.flipped && tts.supported ? '<div class="tts-card-hint" id="ttsCardHint" hidden></div>' : "");
+      `).join("") + (state.flipped && (tts.supported || neural.ok) ? '<div class="tts-card-hint" id="ttsCardHint" hidden></div>' : "");
     }
 
     function renderCard() {
@@ -5078,6 +5144,383 @@
     }
 
 
+    /* ===== 고품질 녹음 음성 + 발음 코치 (발음기호 · 따라 말하기 채점) ===== */
+    /* 음원: audio/*.mp3 (Kokoro-82M · Piper 로 미리 만든 정적 파일) — 서버·API 없음.
+       audio/audio-data.js 가 없거나 파일이 없으면 기기 음성(Web Speech API)으로 자동 대체합니다. */
+    const PRON = {
+      langName: "영어", defaultLang: "en-US", coachLabel: "🎤 따라 말하기",
+      voices: { "en-US": "us", "en-GB": "uk", "en-AU": "uk" },
+      srLang: { "en-US": "en-US", "en-GB": "en-GB", "en-AU": "en-AU" },
+      neuralInfo: "녹음 음성 · 미국: Kokoro af_heart · 영국: Kokoro bf_emma (미리 만든 mp3)",
+      deviceFirst: (lang) => lang === "en-AU" && tts.loaded && ttsHasLocale("en-AU"),
+      hintNeural: (card) => (typeof isMelbourneCard === "function" && isMelbourneCard(card) && !(tts.loaded && ttsHasLocale("en-AU")))
+        ? "🇦🇺 호주 발음: 이 기기에 호주 음성이 없어 영국 녹음 음성으로 들려줘요(호주 억양은 아니에요)." : "",
+      tips: [
+        { re: /[θð]/, label: "th (θ·ð)", tip: "혀끝을 윗니와 아랫니 사이에 살짝 내밀고 바람을 내요. ㅅ·ㄷ로 바꾸지 않기." },
+        { re: /[fv]/, label: "f·v", tip: "윗니로 아랫입술을 살짝 물고 바람을 내요. ㅍ·ㅂ가 아니에요." },
+        { re: /ɹ[\s\S]*l|l[\s\S]*ɹ/, label: "r·l", tip: "r은 혀끝을 어디에도 대지 않고 살짝 말고, l은 혀끝을 윗잇몸에 붙여요." },
+        { re: /z/, label: "z", tip: "ㅈ가 아니라 성대를 떨며 내는 ‘즈’ 소리예요." }
+      ]
+    };
+    function cyrb53(str, seed) {
+      let h1 = 0xdeadbeef ^ (seed || 0), h2 = 0x41c6ce57 ^ (seed || 0);
+      for (let i = 0; i < str.length; i++) {
+        const ch = str.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+      }
+      h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507); h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+      h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507); h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+      return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+    }
+    const neural = { ok: typeof Audio !== "undefined", el: null, set: null, fails: 0 };
+    function neuralData() { return (typeof window !== "undefined" && window.TTS_DATA) || null; }
+    function neuralHasData() { const d = neuralData(); return !!(d && d.audio && d.audio.length); }
+    function neuralFile(text, lang) {
+      const d = neuralData();
+      const voice = PRON.voices[lang];
+      if (!d || !d.audio || !voice) return null;
+      if (!neural.set) neural.set = new Set(d.audio);
+      const h = cyrb53(voice + "|" + (ttsSettings.rate === "slow" ? "s" : "n") + "|" + text).toString(16);
+      return neural.set.has(h) ? h : null;
+    }
+    function neuralActive() { return ttsSettings.engine === "neural" && neural.ok && neuralHasData(); }
+    /** user gesture 안에서 동기 호출. 재생을 시작했으면 true, 못 하면 false(→ 기기 음성) */
+    function neuralPlay(text, lang, key) {
+      if (!neuralActive() || neural.fails >= 3) return false;
+      if (PRON.deviceFirst && PRON.deviceFirst(lang)) return false;
+      const h = neuralFile(text, lang);
+      if (!h) return false;
+      if (!neural.el) { neural.el = new Audio(); neural.el.preload = "auto"; }
+      const a = neural.el;
+      try { a.pause(); } catch (_) {}
+      if (tts.supported) { try { window.speechSynthesis.cancel(); } catch (_) {} }
+      const token = ++tts.token;
+      const fallback = (why) => {
+        if (tts.token !== token) return;
+        neural.fails += 1;
+        console.warn("neural audio failed → device voice", why);
+        ttsMarkPlaying(null);
+        if (tts.supported) ttsSpeakDevice(text, lang, key);
+      };
+      a.onended = () => { if (tts.token === token) ttsMarkPlaying(null); };
+      a.onerror = () => fallback("error");
+      try {
+        a.src = "audio/" + h + ".mp3";
+        ttsMarkPlaying(key);
+        const p = a.play();
+        if (p && typeof p.catch === "function") p.catch((err) => {
+          if (err && err.name === "AbortError") return;
+          fallback(err && err.name);
+        });
+      } catch (err) { fallback(err && err.name); }
+      return true;
+    }
+    function ttsStopNeural() { if (neural.el) { try { neural.el.pause(); } catch (_) {} } }
+    function ttsSpeak(text, lang, key) {
+      if (!text) return;
+      if (coach.rec) coachStop();
+      if (neuralPlay(text, lang, key)) return;
+      ttsSpeakDevice(text, lang, key);
+    }
+
+    /* ----- 발음기호(eSpeak NG) + 한국인 주의 소리 ----- */
+    function ipaWordsFor(card, regId) {
+      const d = neuralData();
+      const lang = TTS_REG_LANG[regId];
+      if (!d || !d.ipa || !lang || !card[regId]) return null;
+      const w = d.ipa[lang + "|" + card[regId]];
+      return Array.isArray(w) && w.length ? w : null;
+    }
+    function ipaTipsFor(words) {
+      const s = words.join(" ");
+      return PRON.tips.filter((t) => t.re.test(s)).slice(0, 2);
+    }
+    function ipaBlockHtml(card, regId) {
+      if (!ttsSettings.ipa) return "";
+      const w = ipaWordsFor(card, regId);
+      if (!w) return "";
+      const tips = ipaTipsFor(w);
+      return `<div class="ipa-block" data-ipa-reg="${regId}">` +
+        `<div class="ipa-line" lang="und">/ ${escapeHtml(w.join(" "))} /</div>` +
+        (tips.length
+          ? `<div class="ipa-tips"><strong>한국어 화자가 헷갈리기 쉬운 소리</strong>` +
+            tips.map((t) => `<div>· <b>${escapeHtml(t.label)}</b> ${escapeHtml(t.tip)}</div>`).join("") + `</div>`
+          : "") +
+        `</div>`;
+    }
+
+    /* ----- 따라 말하기: 브라우저 음성인식(Web Speech API) + 단어별 비교 채점 ----- */
+    const SpeechRec = typeof window !== "undefined" ? (window.SpeechRecognition || window.webkitSpeechRecognition) : null;
+    const coach = { ok: !!SpeechRec, rec: null, btn: null, cardId: null, results: {} };
+    function coachNorm(s) {
+      return String(s || "").toLowerCase().replace(/ñ/g, "\u0001").normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}\u0001]/gu, "");
+    }
+    function coachSim(a, b) {
+      if (a === b) return 1;
+      if (!a.length || !b.length) return 0;
+      const m = a.length, n = b.length;
+      let prev = new Array(n + 1), cur = new Array(n + 1);
+      for (let j = 0; j <= n; j++) prev[j] = j;
+      for (let i = 1; i <= m; i++) {
+        cur[0] = i;
+        for (let j = 1; j <= n; j++) {
+          cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        }
+        const t = prev; prev = cur; cur = t;
+      }
+      return 1 - prev[n] / Math.max(m, n);
+    }
+    /** 목표 문장 vs 인식된 문장 → 단어별 상태 + 점수(0~100). 순수 함수(테스트 가능) */
+    function coachScore(target, heard) {
+      const tw = String(target).split(/\s+/).filter(Boolean).map((raw, ti) => ({ raw, ti, key: coachNorm(raw) })).filter((w) => w.key);
+      const hw = String(heard).split(/\s+/).filter(Boolean).map((raw) => ({ raw, key: coachNorm(raw) })).filter((w) => w.key);
+      const N = tw.length, M = hw.length;
+      if (!N) return { score: 0, words: [], extra: 0, heard: String(heard) };
+      const INS = 0.5, DEL = 1;
+      const sim = (i, j) => coachSim(tw[i].key, hw[j].key);
+      const dp = Array.from({ length: N + 1 }, () => new Array(M + 1).fill(0));
+      for (let i = 1; i <= N; i++) dp[i][0] = i * DEL;
+      for (let j = 1; j <= M; j++) dp[0][j] = j * INS;
+      for (let i = 1; i <= N; i++) {
+        for (let j = 1; j <= M; j++) {
+          const s = sim(i - 1, j - 1);
+          const sub = s >= 0.5 ? 1 - s : 1;
+          dp[i][j] = Math.min(dp[i - 1][j - 1] + sub, dp[i - 1][j] + DEL, dp[i][j - 1] + INS);
+        }
+      }
+      const pair = new Array(N).fill(-1);
+      let i = N, j = M, extra = 0;
+      while (i > 0 || j > 0) {
+        if (i > 0 && j > 0) {
+          const s = sim(i - 1, j - 1);
+          const sub = s >= 0.5 ? 1 - s : 1;
+          if (Math.abs(dp[i][j] - (dp[i - 1][j - 1] + sub)) < 1e-9) { pair[i - 1] = j - 1; i--; j--; continue; }
+        }
+        if (i > 0 && Math.abs(dp[i][j] - (dp[i - 1][j] + DEL)) < 1e-9) { i--; continue; }
+        extra++; j--;
+      }
+      let credit = 0;
+      const words = tw.map((w, idx) => {
+        const hj = pair[idx];
+        if (hj < 0) return { word: w.raw, ti: w.ti, status: "miss", heard: "" };
+        const s = sim(idx, hj);
+        const status = s >= 0.8 ? "ok" : (s >= 0.5 ? "near" : "miss");
+        credit += status === "ok" ? 1 : (status === "near" ? 0.5 : 0);
+        return { word: w.raw, ti: w.ti, status, heard: hw[hj].raw };
+      });
+      const score = Math.max(0, Math.round(100 * credit / N) - Math.min(20, extra * 4));
+      return { score, words, extra, heard: hw.map((x) => x.raw).join(" ") };
+    }
+    function coachBest(target, alts) {
+      let best = null;
+      alts.forEach((a) => { const r = coachScore(target, a); if (!best || r.score > best.score) best = r; });
+      return best;
+    }
+    function coachErrorText(code) {
+      switch (code) {
+        case "not-allowed":
+        case "service-not-allowed":
+          return "음성 인식을 쓸 수 없어요. 마이크 사용을 허용했는지 확인하고, 아이폰은 설정에서 Siri(또는 받아쓰기)를 켜 주세요. 홈 화면에 추가한 앱에서는 동작하지 않을 수 있어요.";
+        case "no-speech": return "말소리가 들리지 않았어요. 버튼을 누른 뒤 바로 말해 보세요.";
+        case "audio-capture": return "마이크를 찾지 못했어요.";
+        case "network": return "음성 인식 서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.";
+        case "language-not-supported": return "이 기기는 해당 언어 음성 인식을 지원하지 않아요.";
+        default: return "음성 인식에 실패했어요(" + code + "). 다시 시도해 주세요.";
+      }
+    }
+    function wordIpa(lang, w) {
+      const d = neuralData();
+      if (!d || !d.wipa || !w) return "";
+      const k = String(w).toLowerCase().replace(/’/g, "'").replace(/^[^\p{L}\p{N}']+|[^\p{L}\p{N}']+$/gu, "");
+      return d.wipa[lang + "|" + k] || "";
+    }
+    function coachResultHtml(card, regId, r) {
+      const ipa = ipaWordsFor(card, regId);
+      const tokens = String(card[regId]).split(/\s+/).filter(Boolean);
+      const aligned = ipa && ipa.length === tokens.length;
+      const cls = r.score >= 90 ? "great" : (r.score >= 70 ? "good" : (r.score >= 40 ? "mid" : "low"));
+      const msg = r.score >= 90 ? "아주 좋아요!" : (r.score >= 70 ? "좋아요. 빨간 단어만 다시 연습해요." : (r.score >= 40 ? "천천히 한 번 더 들어 보고 따라 해요." : "먼저 🔊 로 듣고, 🐢 천천히로 따라 해 보세요."));
+      const words = r.words.map((w) => `<span class="cw cw-${w.status}">${escapeHtml(w.word)}</span>`).join(" ");
+      const bad = [];
+      r.words.forEach((w) => {
+        if (w.status === "ok") return;
+        const ip = wordIpa(TTS_REG_LANG[regId], w.word) || (aligned ? ipa[w.ti] : "");
+        const hip = w.heard ? wordIpa(TTS_REG_LANG[regId], w.heard) : "";
+        bad.push(`<li><b>${escapeHtml(w.word)}</b>${ip ? ` <span class="ipa-inline">/${escapeHtml(ip)}/</span>` : ""} → ` +
+          (w.heard ? `인식된 말 “${escapeHtml(w.heard)}”${hip ? ` <span class="ipa-inline">/${escapeHtml(hip)}/</span>` : ""}` : "인식되지 않음") + `</li>`);
+      });
+      return `<div class="coach-score ${cls}">🎯 ${r.score}점 · ${msg}</div>` +
+        `<div class="coach-words">${words}</div>` +
+        `<div class="coach-heard">인식된 문장: “${escapeHtml(r.heard || "(없음)")}”</div>` +
+        (bad.length ? `<ul class="coach-fix">${bad.join("")}</ul>` : "") +
+        `<div class="coach-note">※ 기기의 음성 인식이 문맥으로 말을 보정해서 점수는 참고용이에요. 소리 자체의 정확도 평가가 아니라 «알아듣는지» 확인이에요.</div>`;
+    }
+    function coachFit() {
+      try {
+        const cardEl = document.getElementById("flashcard");
+        const backEl = cardEl && cardEl.querySelector(".card-face.back");
+        if (state.flipped && backEl && backEl.scrollHeight > cardEl.offsetHeight) cardEl.style.minHeight = backEl.scrollHeight + "px";
+      } catch (_) {}
+    }
+    function coachShow(regId, html, isErr) {
+      const out = els.stage.querySelector(`[data-coach-out="${regId}"]`);
+      if (!out) return;
+      out.hidden = !html;
+      out.className = "coach-out" + (isErr ? " err" : "");
+      out.innerHTML = html || "";
+      coachFit();
+    }
+    function coachStop() {
+      if (coach.rec) { try { coach.rec.abort(); } catch (_) {} }
+      coach.rec = null;
+      document.querySelectorAll(".coach-btn.listening").forEach((b) => { b.classList.remove("listening"); b.textContent = PRON.coachLabel; });
+    }
+    function coachStart(card, regId, lang, btn) {
+      if (!coach.ok) return;
+      if (coach.rec && coach.btn === btn) { coachStop(); return; }
+      coachStop();
+      ttsStop();
+      const cid = String(card.id);
+      if (coach.cardId !== cid) { coach.cardId = cid; coach.results = {}; }
+      let rec;
+      try { rec = new SpeechRec(); } catch (err) { coachShow(regId, escapeHtml(coachErrorText("service-not-allowed")), true); return; }
+      rec.lang = PRON.srLang[lang] || lang;
+      rec.interimResults = false;
+      rec.continuous = false;
+      rec.maxAlternatives = 3;
+      coach.rec = rec; coach.btn = btn;
+      let got = false;
+      btn.classList.add("listening");
+      btn.textContent = "🎙️ 듣는 중… (누르면 취소)";
+      coachShow(regId, "", false);
+      rec.onresult = (ev) => {
+        try {
+          const res = ev.results[ev.results.length - 1];
+          const alts = [];
+          for (let k = 0; k < res.length; k++) if (res[k] && res[k].transcript) alts.push(res[k].transcript);
+          if (!alts.length) return;
+          got = true;
+          const r = coachBest(card[regId], alts);
+          const html = coachResultHtml(card, regId, r);
+          coach.results[regId] = html;
+          coachShow(regId, html, false);
+        } catch (err) { console.warn("coach result failed", err); }
+      };
+      rec.onerror = (ev) => {
+        const code = ev && ev.error ? ev.error : "unknown";
+        if (code === "aborted") return;
+        got = true;
+        coachShow(regId, escapeHtml(coachErrorText(code)), true);
+      };
+      rec.onend = () => {
+        if (coach.rec === rec) coach.rec = null;
+        btn.classList.remove("listening");
+        btn.textContent = PRON.coachLabel;
+        if (!got && !(coach.results[regId])) coachShow(regId, escapeHtml(coachErrorText("no-speech")), true);
+      };
+      try { rec.start(); } catch (err) {
+        coach.rec = null; btn.classList.remove("listening"); btn.textContent = PRON.coachLabel;
+        coachShow(regId, escapeHtml(coachErrorText("service-not-allowed")), true);
+      }
+    }
+    function bindCoachButtons(card) {
+      const cid = String(card.id);
+      if (coach.cardId !== cid) { coach.cardId = cid; coach.results = {}; }
+      els.stage.querySelectorAll(".coach-btn").forEach((btn) => {
+        const reg = btn.getAttribute("data-coach-reg");
+        const lang = btn.getAttribute("data-coach-lang");
+        const activate = (e) => { e.stopPropagation(); e.preventDefault(); coachStart(card, reg, lang, btn); };
+        btn.addEventListener("click", activate);
+        btn.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") activate(e); else e.stopPropagation(); });
+        btn.addEventListener("pointerdown", (e) => e.stopPropagation());
+        btn.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
+        if (coach.results[reg]) coachShow(reg, coach.results[reg], false);
+      });
+      /* 발음기호·채점 결과를 눌러도 카드가 뒤집히지 않게 */
+      els.stage.querySelectorAll(".ipa-block, .coach-out").forEach((n) => {
+        n.addEventListener("click", (e) => e.stopPropagation());
+      });
+    }
+
+    /* ----- 카드 UI / 패널 ----- */
+    function ttsButtonsHtml(card, regId) {
+      if (!state.flipped || !(tts.supported || neural.ok || coach.ok)) return "";
+      const lang = TTS_REG_LANG[regId] || PRON.defaultLang;
+      const btn = (l, cls, text, aria) =>
+        `<span class="tts-btn${cls}" role="button" tabindex="0" aria-pressed="false" aria-label="${escapeHtml(aria)}"` +
+        ` data-tts-reg="${regId}" data-tts-lang="${l}" data-tts-key="${escapeHtml(ttsKey(card, regId, l))}">${text}</span>`;
+      let html = "";
+      if (tts.supported || neural.ok) {
+        html += btn(lang, "", "🔊 " + TTS_LOCALES[lang].label + " 발음", TTS_LOCALES[lang].label + " 발음으로 듣기");
+        if (typeof isMelbourneCard === "function" && isMelbourneCard(card)) html += btn("en-AU", " aus", "🇦🇺 호주 발음", "호주 발음으로 듣기");
+      }
+      if (coach.ok) {
+        html += `<span class="coach-btn" role="button" tabindex="0" aria-label="따라 말하고 발음 확인하기"` +
+          ` data-coach-reg="${regId}" data-coach-lang="${lang}">${PRON.coachLabel}</span>`;
+      }
+      return `<div class="tts-row">${html}</div>` + ipaBlockHtml(card, regId) +
+        `<div class="coach-out" data-coach-out="${regId}" hidden></div>`;
+    }
+    function updateTtsCardHint() {
+      const node = document.getElementById("ttsCardHint");
+      if (!node || !state || !state.current) return;
+      let msg = "";
+      if (neuralActive()) {
+        if (PRON.hintNeural) msg = PRON.hintNeural(state.current) || "";
+      } else if (tts.supported) {
+        const miss = ttsMissingFor(state.current);
+        if (miss.length) {
+          msg = "이 기기에 " + miss.map((l) => TTS_LOCALES[l].label).join("·") + " " + PRON.langName +
+            " 음성이 없어 가까운 " + PRON.langName + " 음성으로 읽어요. 설치 방법은 위 «발음 듣기» 안내 참고.";
+        }
+      }
+      node.hidden = !msg;
+      node.textContent = msg;
+    }
+    function bindTtsExtra(card) { bindCoachButtons(card); }
+
+    function renderTtsPanel() {
+      renderTtsPanelDevice();
+      renderTtsExtra();
+    }
+    function renderTtsExtra() {
+      const engBox = document.getElementById("ttsEngineChips");
+      const ipaBox = document.getElementById("ttsIpaChips");
+      const mk = (box, list, isOn, onPick) => {
+        if (!box) return;
+        box.innerHTML = "";
+        list.forEach((o) => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "chip" + (isOn(o) ? " active" : "");
+          b.textContent = o.label;
+          b.addEventListener("click", () => { if (isOn(o)) return; onPick(o); saveTtsSettings(); ttsStop(); renderTtsPanel(); try { render(); } catch (_) {} });
+          box.appendChild(b);
+        });
+      };
+      mk(engBox, [{ v: "neural", label: "고품질 녹음" }, { v: "device", label: "기기 음성" }],
+        (o) => ttsSettings.engine === o.v, (o) => { ttsSettings.engine = o.v; });
+      mk(ipaBox, [{ v: true, label: "켬" }, { v: false, label: "끔" }],
+        (o) => ttsSettings.ipa === o.v, (o) => { ttsSettings.ipa = o.v; });
+      const info = document.getElementById("ttsVoiceInfo");
+      const hint = document.getElementById("ttsHint");
+      const note = document.getElementById("coachInfo");
+      if (info && hint && neuralActive()) {
+        info.textContent = PRON.neuralInfo + (tts.supported ? " · 녹음이 없는 카드(내 CSV 등)는 기기 음성으로 읽어요." : "");
+        hint.hidden = true;
+      } else if (info && ttsSettings.engine === "neural" && !neuralHasData() && neural.ok) {
+        info.textContent = "고품질 녹음 파일을 불러오지 못해 기기 음성으로 읽어요. " + (info.textContent || "");
+      }
+      if (note) {
+        note.textContent = coach.ok
+          ? "🎤 따라 말하기: 카드를 뒤집고 «🎤» 를 누른 뒤 문장을 말하면 단어별로 알아들었는지 확인해요. 음성 인식은 브라우저가 처리해요(Safari는 Apple, Chrome은 Google 서비스). 아이폰은 설정의 Siri(받아쓰기)가 켜져 있어야 하고, 홈 화면 앱에서는 안 될 수 있어요."
+          : "이 브라우저는 따라 말하기(음성 인식)를 지원하지 않아요. 아이폰은 Safari(iOS 14.5 이상), PC·안드로이드는 Chrome을 써 주세요.";
+      }
+    }
+
+
     /* ===== 발음 듣기 (Web Speech API · 서버/키 없음) ===== */
     const TTS_SETTINGS_KEY = "english-flashcards-tts-v1";
     const TTS_RATES = [
@@ -5100,10 +5543,12 @@
         const data = JSON.parse(localStorage.getItem(TTS_SETTINGS_KEY) || "{}") || {};
         return {
           rate: TTS_RATES.some((r) => r.id === data.rate) ? data.rate : "normal",
-          autoplay: data.autoplay === true
+          autoplay: data.autoplay === true,
+          engine: data.engine === "device" ? "device" : "neural",
+          ipa: data.ipa !== false
         };
       } catch (_) {
-        return { rate: "normal", autoplay: false };
+        return { rate: "normal", autoplay: false, engine: "neural", ipa: true };
       }
     }
     function saveTtsSettings() {
@@ -5194,11 +5639,12 @@
     }
     function ttsStop() {
       tts.token += 1;
+      ttsStopNeural();
       if (tts.supported) { try { window.speechSynthesis.cancel(); } catch (_) {} }
       ttsMarkPlaying(null);
     }
     /** Must be called synchronously from a user gesture (iOS Safari). */
-    function ttsSpeak(text, lang, key) {
+    function ttsSpeakDevice(text, lang, key) {
       if (!tts.supported || !text) { renderTtsPanel(); return; }
       const synth = window.speechSynthesis;
       try { synth.cancel(); } catch (_) {}
@@ -5239,30 +5685,10 @@
     function isMelbourneCard(card) {
       return Array.isArray(card.topics) && card.topics.includes("멜버른");
     }
-    function ttsButtonsHtml(card, regId) {
-      if (!tts.supported || !state.flipped) return "";
-      const lang = TTS_REG_LANG[regId] || "en-US";
-      const btn = (l, cls, text, aria) =>
-        `<span class="tts-btn${cls}" role="button" tabindex="0" aria-pressed="false" aria-label="${escapeHtml(aria)}"` +
-        ` data-tts-reg="${regId}" data-tts-lang="${l}" data-tts-key="${escapeHtml(ttsKey(card, regId, l))}">${text}</span>`;
-      let html = btn(lang, "", "🔊 " + TTS_LOCALES[lang].label + " 발음", TTS_LOCALES[lang].label + " 발음으로 듣기");
-      if (isMelbourneCard(card)) html += btn("en-AU", " aus", "🇦🇺 호주 발음", "호주 발음으로 듣기");
-      return `<div class="tts-row">${html}</div>`;
-    }
     function ttsMissingFor(card) {
       if (!tts.supported || !tts.loaded) return [];
       const need = ["en-US", "en-GB"].concat(card && isMelbourneCard(card) ? ["en-AU"] : []);
       return need.filter((l) => !ttsHasLocale(l));
-    }
-    function updateTtsCardHint() {
-      const node = document.getElementById("ttsCardHint");
-      if (!node || !state || !state.current) return;
-      const miss = ttsMissingFor(state.current);
-      node.hidden = !miss.length;
-      node.textContent = miss.length
-        ? "이 기기에 " + miss.map((l) => TTS_LOCALES[l].label).join("·") +
-          " 영어 음성이 없어 가까운 영어 음성으로 읽어요. 설치 방법은 위 «발음 듣기» 안내 참고."
-        : "";
     }
     function bindTtsButtons(card) {
       els.stage.querySelectorAll(".tts-btn").forEach((btn) => {
@@ -5283,6 +5709,7 @@
         btn.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
       });
       if (tts.playingKey) ttsMarkPlaying(tts.playingKey);
+      bindTtsExtra(card);
       updateTtsCardHint();
     }
     function ttsAutoPlayOnFlip() {
@@ -5291,7 +5718,7 @@
       const lang = TTS_REG_LANG[reg] || "en-US";
       ttsSpeak(state.current[reg], lang, ttsKey(state.current, reg, lang));
     }
-    function renderTtsPanel() {
+    function renderTtsPanelDevice() {
       const rateBox = document.getElementById("ttsRateChips");
       const autoBox = document.getElementById("ttsAutoChips");
       const info = document.getElementById("ttsVoiceInfo");
@@ -5872,7 +6299,7 @@
       const t = e.target;
       if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || "")) return;
       if (t && t.isContentEditable) return;
-      if (t && t.closest && t.closest(".tts-btn")) return;
+      if (t && t.closest && t.closest(".tts-btn, .coach-btn")) return;
       const k = e.key;
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (k === "z" || k === "Z")) {
         e.preventDefault(); undoLast(); return;
@@ -5907,7 +6334,7 @@
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          const text = String(reader.result || "");
+          const text = decodeCsvBuffer(reader.result);
           customCards = cardsFromCsvText(text);
           saveCustomCards();
           if (state.deckSource === "builtin") state.deckSource = "merge";
@@ -5919,7 +6346,7 @@
         e.target.value = "";
       };
       reader.onerror = () => setCsvStatus("파일을 읽을 수 없어요.", true);
-      reader.readAsText(file, "UTF-8");
+      reader.readAsArrayBuffer(file);
     });
 
     function on(node, evt, fn) {
