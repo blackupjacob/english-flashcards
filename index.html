@@ -962,6 +962,107 @@
       .app { padding-top: 24px; }
       .card, .card-scene { min-height: 340px; }
     }
+
+    /* ===== Anki식 개선 (간격 반복 · 통계 · 백업) ===== */
+    button, summary, .chip { touch-action: manipulation; }
+    .dash {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 10px 12px; box-shadow: 0 2px 8px rgba(44, 36, 24, 0.04);
+    }
+    .dash-stats { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.84rem; color: var(--ink-soft); flex: 1 1 200px; }
+    .dash-stats strong { color: var(--ink); }
+    .dash-btns { display: flex; gap: 6px; }
+    .dash-btns button {
+      min-height: 40px; padding: 6px 12px; border-radius: 12px; border: 1.5px solid var(--border);
+      background: #fff; color: var(--ink); font-family: inherit; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    }
+    .dash-nudge { flex-basis: 100%; font-size: 0.78rem; color: var(--accent-deep); background: #fff4ea; border-radius: 10px; padding: 6px 10px; }
+    .dash-nudge[hidden] { display: none; }
+    .srs-counts { display: flex; justify-content: center; gap: 14px; margin-top: 8px; font-size: 0.9rem; font-weight: 700; }
+    .srs-counts span { padding: 2px 4px; border-bottom: 3px solid transparent; }
+    .srs-counts .c-new { color: #2563a8; }
+    .srs-counts .c-learn { color: var(--bad); }
+    .srs-counts .c-rev { color: var(--ok); }
+    .srs-counts .cur { border-bottom-color: currentColor; }
+    .card-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .card-tools button {
+      min-height: 40px; min-width: 44px; padding: 6px 10px; border-radius: 12px; border: 1.5px solid var(--border);
+      background: #fff; color: var(--ink-soft); font-family: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    }
+    .card-tools button:disabled { opacity: 0.4; cursor: default; }
+    .card-tools button.on { background: #fff6d6; border-color: #e6c75a; color: #7a5a00; }
+    .card-tools .tools-right { display: flex; gap: 6px; }
+    .actions.rate4 { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .actions.rate2 { grid-template-columns: 1fr 1fr; }
+    .actions.rate-bar {
+      position: sticky; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 5;
+      padding: 8px; border-radius: 20px; background: rgba(250, 246, 241, 0.92);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); border: 1px solid var(--border);
+      box-shadow: 0 6px 22px rgba(44, 36, 24, 0.16);
+    }
+    .rate-btn {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      min-height: 60px; padding: 6px 2px; border-radius: 14px; font-family: inherit; font-weight: 800; font-size: 0.98rem; cursor: pointer;
+      border: 1.5px solid var(--border); background: #fff; color: var(--ink);
+    }
+    .rate-btn small { font-size: 0.7rem; font-weight: 600; opacity: 0.8; }
+    .rate-btn:active { transform: scale(0.96); }
+    .rate-btn.r-again { background: var(--bad-bg); color: var(--bad); border-color: #f0c8c8; }
+    .rate-btn.r-hard { background: #fff4e0; color: #9a5b00; border-color: #f0d9aa; }
+    .rate-btn.r-good { background: var(--ok-bg); color: var(--ok); border-color: #c5e5d2; }
+    .rate-btn.r-easy { background: #e6f0fb; color: #2563a8; border-color: #bcd3ee; }
+    .kbd-hint { text-align: center; font-size: 0.72rem; color: var(--ink-soft); margin-top: 6px; }
+    @media (hover: none) { .kbd-hint { display: none; } }
+    .toast {
+      position: fixed; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+      max-width: 90vw; background: #2c2418; color: #fff; padding: 10px 16px; border-radius: 14px; font-size: 0.86rem;
+      z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,0.25); opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .toast.show { opacity: 1; }
+    .settings-group, .stats-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 2px 8px rgba(44, 36, 24, 0.04); }
+    .settings-group > summary, .stats-panel > summary {
+      list-style: none; cursor: pointer; padding: 14px; font-weight: 800; font-size: 0.95rem; min-height: 48px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .settings-group > summary::-webkit-details-marker, .stats-panel > summary::-webkit-details-marker { display: none; }
+    .settings-group > summary::after, .stats-panel > summary::after { content: "▾"; color: var(--ink-soft); }
+    .settings-group[open] > summary::after, .stats-panel[open] > summary::after { content: "▴"; }
+    .settings-body { display: flex; flex-direction: column; gap: 12px; padding: 0 10px 12px; }
+    .stats-body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 14px; }
+    .st-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .st-cell { background: #f7f1e8; border-radius: 12px; padding: 10px 6px; text-align: center; font-size: 0.74rem; color: var(--ink-soft); }
+    .st-cell strong { display: block; font-size: 1.25rem; color: var(--ink); }
+    .st-title { font-size: 0.82rem; font-weight: 800; margin-bottom: 6px; }
+    .heat { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 1fr); gap: 3px; }
+    .heat i { display: block; aspect-ratio: 1; border-radius: 3px; background: #efe7da; min-width: 0; }
+    .heat i.l1 { background: #f3cfae; } .heat i.l2 { background: #e8a87c; } .heat i.l3 { background: #c45c26; } .heat i.l4 { background: #7d3410; }
+    .heat i.fut { background: transparent; }
+    .heat i.today { outline: 2px solid var(--ink); outline-offset: 0; }
+    .heat-legend { display: flex; align-items: center; gap: 4px; justify-content: flex-end; font-size: 0.7rem; color: var(--ink-soft); margin-top: 4px; }
+    .heat-legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; background: #efe7da; }
+    .heat-legend i.l1 { background: #f3cfae; } .heat-legend i.l2 { background: #e8a87c; } .heat-legend i.l3 { background: #c45c26; } .heat-legend i.l4 { background: #7d3410; }
+    .stack { display: flex; height: 18px; border-radius: 9px; overflow: hidden; background: #efe7da; }
+    .stack span { display: block; height: 100%; }
+    .stack .s-new { background: #6b9bd2; } .stack .s-learn { background: #d98080; } .stack .s-young { background: #9bd0b0; } .stack .s-mature { background: #2d7a4f; } .stack .s-susp { background: #b8ad9c; }
+    .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.76rem; color: var(--ink-soft); margin-top: 6px; }
+    .legend b { color: var(--ink); }
+    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; }
+    .fc { display: flex; align-items: flex-end; gap: 6px; height: 84px; }
+    .fc div { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; font-size: 0.68rem; color: var(--ink-soft); }
+    .fc div span { display: block; width: 100%; background: #e8a87c; border-radius: 4px 4px 0 0; min-height: 2px; }
+    .fc div em { font-style: normal; font-weight: 700; color: var(--ink); }
+    .susp-list { display: flex; flex-direction: column; gap: 6px; }
+    .susp-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #f7f1e8; border-radius: 10px; padding: 6px 10px; font-size: 0.8rem; }
+    .susp-item button { min-height: 36px; padding: 4px 10px; border-radius: 10px; border: 1.5px solid var(--border); background: #fff; font-family: inherit; font-weight: 700; font-size: 0.76rem; cursor: pointer; }
+    .set-note { font-size: 0.74rem; color: var(--ink-soft); line-height: 1.5; margin-top: 6px; }
+    .backup-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: center; }
+    .backup-row .btn-mini { min-height: 40px; }
+    .caught { text-align: center; padding: 20px 12px; }
+    .caught h2 { font-size: 1.2rem; margin-bottom: 6px; }
+    .caught p { color: var(--ink-soft); font-size: 0.88rem; line-height: 1.55; margin-bottom: 10px; }
+    .sum-extra { background: #f7f1e8; border-radius: 12px; padding: 10px 12px; font-size: 0.82rem; color: var(--ink-soft); margin: 10px 0; line-height: 1.6; }
+    .sum-extra strong { color: var(--ink); }
   </style>
 </head>
 <body>
@@ -973,21 +1074,42 @@
     </header>
 
     
-    <div class="daily-panel" id="dailyPanel">
-      <div class="daily-title">
-        <span>오늘의 세트</span>
-        <span class="daily-date" id="dailyDateLabel"></span>
+    <div class="dash" id="dashboard">
+      <div class="dash-stats" id="dashStats"></div>
+      <div class="dash-btns">
+        <button type="button" id="btnOpenStats">📊 통계</button>
+        <button type="button" id="btnOpenBackup">💾 백업</button>
       </div>
-      <div class="daily-help">
-        <strong>오늘 세트</strong>: 필터된 덱에서 날짜 시드로 뽑은 오늘의 카드입니다. 같은 날·같은 필터면 순서가 같습니다.<br/>
-        <strong>주간 복습</strong>: 맞혀도 7일 안에 약 2번 다시 나옵니다. 틀린 카드는 바로 큐에 재등장하고, 주간 노출에도 포함됩니다.
-      </div>
-      <div class="daily-row">
-        <label for="dailyTargetSelect">하루 목표</label>
-        <div class="chip-row" id="dailyTargetChips"></div>
-      </div>
-      <div class="deck-meta" id="dailyMeta" style="margin-top:8px"></div>
+      <div class="dash-nudge" id="dashNudge" hidden></div>
     </div>
+
+    <div id="bootError" class="boot-error" hidden></div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-meta">
+        <span>진행 <strong id="progressLabel">0 / 0</strong></span>
+        <span id="reviewLabel"></span>
+      </div>
+      <div class="progress-bar" aria-hidden="true"><span id="progressFill"></span></div>
+      <div class="srs-counts" id="srsCounts"></div>
+      <div class="stats-row">
+        <div class="stat ok"><strong id="statCorrect">0</strong>맞음</div>
+        <div class="stat bad"><strong id="statWrong">0</strong>틀림</div>
+        <div class="stat queue"><strong id="statLeft">0</strong>남은 카드</div>
+      </div>
+    </div>
+
+    <div class="stage" id="stage"></div>
+
+    <div class="start-bar" id="startBar">
+      <button type="button" class="btn-primary" id="btnStartStudy">학습 시작</button>
+      <div class="start-hint" id="startHint">주제·난이도·모드를 고른 뒤 시작하세요. 진행 중이면 «다시 시작»으로 오늘 세트를 새로 뽑습니다.</div>
+    </div>
+
+    <details class="stats-panel" id="statsPanel">
+      <summary>📊 학습 통계 · 달력 · 카드 성숙도</summary>
+      <div id="statsBody"></div>
+    </details>
 
     <details class="level-panel" id="levelPanel">
       <summary>
@@ -1006,6 +1128,25 @@
         </div>
       </div>
     </details>
+
+    <details class="settings-group" id="settingsGroup">
+      <summary>⚙️ 설정 · 주제 · 난이도 · 발음 · CSV · 백업</summary>
+      <div class="settings-body">
+    <div class="daily-panel" id="dailyPanel">
+      <div class="daily-title">
+        <span>오늘의 세트</span>
+        <span class="daily-date" id="dailyDateLabel"></span>
+      </div>
+      <div class="daily-help">
+        <strong>오늘 세트</strong>: 복습 차례가 된 카드 + 날짜 시드로 뽑은 <strong>새 카드</strong>(하루 신규 한도만큼)예요. 같은 날·같은 필터면 순서가 같습니다.<br/>
+        <strong>간격 반복</strong>: 답을 본 뒤 다시·어려움·좋음·쉬움으로 평가하면 다음 복습일이 정해져요. <strong>주간 복습</strong>(7일에 약 2번)도 그대로 함께 동작해요.
+      </div>
+      <div class="daily-row">
+        <label for="dailyTargetSelect">하루 신규 카드</label>
+        <div class="chip-row" id="dailyTargetChips"></div>
+      </div>
+      <div class="deck-meta" id="dailyMeta" style="margin-top:8px"></div>
+    </div>
 
     <div class="panel" id="topicPanel">
       <div class="panel-title">
@@ -1062,31 +1203,38 @@
         </div>
       </details>
     </div>
-
-    <div class="start-bar" id="startBar">
-      <button type="button" class="btn-primary" id="btnStartStudy">학습 시작</button>
-      <div class="start-hint" id="startHint">주제·난이도·모드를 고른 뒤 시작하세요. 진행 중이면 «다시 시작»으로 오늘 세트를 새로 뽑습니다.</div>
-    </div>
-
-    <div id="bootError" class="boot-error" hidden></div>
-
-    <div class="progress-wrap" id="progressWrap">
-      <div class="progress-meta">
-        <span>진행 <strong id="progressLabel">0 / 0</strong></span>
-        <span id="reviewLabel"></span>
+      <div class="panel" id="srsSettingsPanel">
+        <div class="panel-title"><span>간격 반복 설정 (Anki식)</span></div>
+        <div class="daily-row" style="margin-top:0"><span class="row-label">하루 복습 한도</span><div class="chip-row" id="srsRowLimit"></div></div>
+        <div class="daily-row"><span class="row-label">평가 버튼</span><div class="chip-row" id="srsRowButtons"></div></div>
+        <div class="daily-row"><span class="row-label">7일 복습(주 2회)</span><div class="chip-row" id="srsRowWeekly"></div></div>
+        <div class="daily-row"><span class="row-label">리치 카드(8번 이상 틀림)</span><div class="chip-row" id="srsRowLeech"></div></div>
+        <div class="daily-row"><span class="row-label">학습 대상</span><div class="chip-row" id="srsRowStar"></div></div>
+        <div class="set-note">
+          <strong>다시</strong>는 3장 뒤에 다시 나오고, <strong>어려움</strong>은 6장 뒤 한 번 더 확인해요(새 카드·재학습 중일 때).
+          복습 카드는 <strong>좋음</strong> 기준 간격 × ease(시작 2.5)로 늘어나고, 버튼 아래 숫자가 다음 간격이에요.
+          7일 복습을 끄면 순수 간격 반복으로만 나와요.
+        </div>
       </div>
-      <div class="progress-bar" aria-hidden="true"><span id="progressFill"></span></div>
-      <div class="stats-row">
-        <div class="stat ok"><strong id="statCorrect">0</strong>맞음</div>
-        <div class="stat bad"><strong id="statWrong">0</strong>틀림</div>
-        <div class="stat queue"><strong id="statLeft">0</strong>남은 카드</div>
+      <div class="panel" id="backupPanel">
+        <div class="panel-title"><span>백업 · 복원 (JSON)</span></div>
+        <div class="set-note" style="margin-top:0">학습 기록·설정·내 CSV 덱은 이 브라우저(localStorage)에만 저장돼요. 기기를 바꾸거나 브라우저 데이터를 지우기 전에 백업해 두세요.</div>
+        <div class="backup-row">
+          <button type="button" class="btn-mini" id="btnBackupDownload">백업 파일 저장</button>
+          <button type="button" class="btn-mini" id="btnBackupCopy">백업 텍스트 복사</button>
+        </div>
+        <div class="csv-row" style="margin-top:10px">
+          <input type="file" id="backupFile" accept=".json,application/json" aria-label="백업 파일 선택(복원)" />
+        </div>
+        <div class="csv-status" id="backupStatus">복원: 위에서 백업 JSON 파일을 고르면 현재 기록을 덮어써요.</div>
       </div>
-    </div>
+      </div>
+    </details>
 
-    <div class="stage" id="stage"></div>
-
-    <footer>제이콥 · BLACKUP COFFEE 로스터의 실전 영어<br/>오늘의 세트 · 주간 복습 · 주간 레벨 보고(추정)</footer>
+    <footer>제이콥 · BLACKUP COFFEE 로스터의 실전 영어<br/>오늘의 세트 · 간격 반복(Anki식) · 주간 복습 · 학습 통계 · 주간 레벨 보고(추정)</footer>
   </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="cards.js"></script>
   <script>
@@ -3175,9 +3323,214 @@
     const LEARN_LOG_KEY = "english-flashcards-learn-log-v1";
     const LEVEL_HISTORY_KEY = "english-flashcards-level-history-v1";
     const REVIEW_DELAY = 3;
+
+    /* ===== 간격 반복 엔진 (Anki SM-2 계열 규칙을 이식) =====
+       출처: ankitects/anki rslib/src/scheduler/states/{review,relearning,fuzz,steps}.rs
+       - 시작 ease 2.5, 최소 1.3, 다시 −0.2 · 어려움 −0.15 · 쉬움 +0.15
+       - 어려움 ×1.2, 쉬움 보너스 ×1.3, 간격 배율 1.0, 틀린 뒤 새 간격 ×0 → 최소 1일
+       - 일찍 복습(early) 간격식, 간격 퍼지(fuzz) 범위, 리치 판정(8회, 이후 4회마다)
+       앱 고유 적응: 분 단위 학습 단계 대신 «N장 뒤 재등장»(세션 기준)으로 대체. */
+    const APP_PREFIX = STORAGE_KEY.replace(/session-v4$/, "");
+    const SRS_KEY = APP_PREFIX + "srs-v1";
+    const DAYLOG_KEY = APP_PREFIX + "daylog-v1";
+    const BACKUP_META_KEY = APP_PREFIX + "backup-meta-v1";
+    const REVIEW_LIMIT_OPTIONS = [30, 50, 100, 200, 500];
+    const SRS_CFG = {
+      initEase: 2.5, minEase: 1.3, againDelta: -0.2, hardDelta: -0.15, easyDelta: 0.15,
+      hard: 1.2, easy: 1.3, ivlMult: 1.0, lapseMult: 0, minLapse: 1, maxIvl: 36500,
+      gradGood: 1, gradEasy: 4, leech: 8, matureDays: 21,
+      hardRepeat: REVIEW_DELAY * 2
+    };
+    const undoStack = [];
+
+    function srsClamp(v, lo, hi) { return Math.min(Math.max(v, lo), hi); }
+    function srsFuzzDelta(iv) {
+      if (iv < 2.5) return 0;
+      let d = 1;
+      [[2.5, 7, 0.15], [7, 20, 0.1], [20, 1e9, 0.05]].forEach((r) => {
+        d += r[2] * Math.max(Math.min(iv, r[1]) - r[0], 0);
+      });
+      return d;
+    }
+    function srsFuzz(iv, min, max, f) {
+      min = Math.min(min, max);
+      iv = srsClamp(iv, min, max);
+      const d = srsFuzzDelta(iv);
+      let lo = srsClamp(Math.round(iv - d), min, max);
+      let up = srsClamp(Math.round(iv + d), min, max);
+      if (up === lo && up > 2 && up < max) up = lo + 1;
+      return Math.floor(lo + f * (1 + up - lo));
+    }
+    /* Anki는 카드별 난수 시드를 쓴다 → 여기서는 (카드, 복습횟수) 해시로 결정적으로 재현 */
+    function srsFactor(id, reps) {
+      return mulberry32(hashSeed(String(id) + "|" + reps + "|srs"))();
+    }
+    function srsConstrain(iv, min, fuzz, f) {
+      iv *= SRS_CFG.ivlMult;
+      const mx = SRS_CFG.maxIvl;
+      const mn = srsClamp(Math.max(min, 1), 1, mx);
+      return fuzz ? srsFuzz(iv, mn, mx, f) : srsClamp(Math.round(iv), mn, mx);
+    }
+    function srsPassing(e, today, f) {
+      const C = SRS_CFG;
+      const sched = e.iv;
+      const elapsed = Math.max(0, daysBetween(e.last || today, today));
+      const late = elapsed - sched;
+      if (late < 0) {
+        /* 예정일 전 복습(주간 복습 등): early review 식, 퍼지 없음 */
+        const s = Math.max(sched, 1);
+        const base = Math.max(elapsed * e.ease, s);
+        return {
+          hard: srsConstrain(Math.max(elapsed * C.hard, s * (C.hard / 2)), 0, false, f),
+          good: srsConstrain(base, 0, false, f),
+          easy: srsConstrain(base * (C.easy - (C.easy - 1) / 2), 0, false, f)
+        };
+      }
+      const cur = Math.max(sched, 1);
+      const days = Math.max(late, 0);
+      const hard = srsConstrain(cur * C.hard, C.hard <= 1 ? 0 : sched + 1, true, f);
+      const good = srsConstrain((cur + days / 2) * e.ease, C.hard <= 1 ? sched + 1 : hard + 1, true, f);
+      const easy = srsConstrain((cur + days) * e.ease * C.easy, good + 1, true, f);
+      return { hard, good, easy };
+    }
+    /* grade: 1 다시 · 2 어려움 · 3 좋음 · 4 쉬움 → { entry, requeue(N장 뒤, 0이면 오늘은 끝), leechNew } */
+    function srsNext(id, prev, grade, today) {
+      const C = SRS_CFG;
+      const base = prev && prev.st && prev.st !== "n" ? prev : null;
+      const reps = ((prev && prev.reps) || 0) + 1;
+      const f = srsFactor(id, reps);
+      let e;
+      let requeue = 0;
+      let leechNew = false;
+      if (!base || base.st === "l") {
+        e = {
+          st: "l", iv: base ? base.iv : 0, due: today, ease: base ? base.ease : C.initEase,
+          reps, lapses: base ? base.lapses : 0, last: today, born: (prev && prev.born) || today
+        };
+        if (grade === 1) requeue = REVIEW_DELAY;
+        else if (grade === 2) requeue = C.hardRepeat;
+        else {
+          const iv = srsFuzz(grade === 3 ? C.gradGood : C.gradEasy, 1, C.maxIvl, f);
+          e.st = "r"; e.iv = iv; e.due = addDays(today, iv);
+        }
+      } else if (base.st === "x") {
+        e = Object.assign({}, base, { reps, last: today });
+        if (grade === 1) { e.due = today; requeue = REVIEW_DELAY; }
+        else if (grade === 2) { e.due = today; requeue = C.hardRepeat; }
+        else {
+          const iv = grade === 3 ? base.iv : base.iv + 1;
+          e.st = "r"; e.iv = iv; e.due = addDays(today, iv);
+        }
+      } else {
+        e = Object.assign({}, base, { reps, last: today });
+        if (grade === 1) {
+          e.lapses = (base.lapses || 0) + 1;
+          leechNew = e.lapses >= C.leech && (e.lapses - C.leech) % Math.max(1, Math.ceil(C.leech / 2)) === 0;
+          e.ease = Math.max(C.minEase, base.ease + C.againDelta);
+          const iv = srsFuzz(Math.max(base.iv, 1) * C.lapseMult, C.minLapse, C.maxIvl, f);
+          e.st = "x"; e.iv = Math.max(1, iv); e.due = today;
+          requeue = REVIEW_DELAY;
+        } else {
+          const p = srsPassing(base, today, f);
+          const iv = grade === 2 ? p.hard : (grade === 3 ? p.good : p.easy);
+          if (grade === 2) e.ease = Math.max(C.minEase, base.ease + C.hardDelta);
+          if (grade === 4) e.ease = base.ease + C.easyDelta;
+          e.st = "r"; e.iv = iv; e.due = addDays(today, iv);
+        }
+      }
+      e.star = !!(prev && prev.star);
+      e.susp = !!(prev && prev.susp);
+      e.leech = !!((prev && prev.leech) || leechNew);
+      return { entry: e, requeue, leechNew };
+    }
+    function srsIvLabel(d) {
+      if (d < 1) return "곧";
+      if (d < 30) return d + "일";
+      if (d < 365) return (Math.round((d / 30) * 10) / 10) + "개월";
+      return (Math.round((d / 365) * 10) / 10) + "년";
+    }
+    function srsPreview(id, prev, today) {
+      return [1, 2, 3, 4].map((g) => {
+        const r = srsNext(id, prev, g, today);
+        return r.requeue > 0 ? (r.requeue + "장 뒤") : srsIvLabel(r.entry.iv);
+      });
+    }
+
+    function loadSrs() {
+      try {
+        const raw = localStorage.getItem(SRS_KEY);
+        if (raw) {
+          const d = JSON.parse(raw);
+          if (d && d.cards && typeof d.cards === "object") return d.cards;
+        }
+      } catch (_) {}
+      return migrateSrs();
+    }
+    function saveSrs() {
+      try { localStorage.setItem(SRS_KEY, JSON.stringify({ v: 1, cards: srs })); } catch (_) {}
+    }
+    /* 이전 버전 사용자: 기존 학습 기록(learn-log)·주간 상태(weekly)를 읽어 «본 카드»로 이관 (원본 키는 건드리지 않음) */
+    function migrateSrs() {
+      const cards = {};
+      try {
+        const today = localDateKey();
+        const by = {};
+        (learnLog.events || []).forEach((e) => {
+          if (!e || e.cardId == null || !e.date) return;
+          (by[String(e.cardId)] = by[String(e.cardId)] || []).push(e);
+        });
+        Object.keys(weeklyState || {}).forEach((k) => {
+          if (by[k]) return;
+          const w = weeklyState[k] || {};
+          by[k] = [{ date: w.lastSeen || w.weekStart || today, correct: true, ts: 0 }];
+        });
+        Object.keys(by).forEach((id) => {
+          const evs = by[id].slice().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.ts || 0) - (b.ts || 0)));
+          const last = evs[evs.length - 1];
+          let streak = 0;
+          for (let i = evs.length - 1; i >= 0 && evs[i].correct; i--) streak++;
+          const lapses = evs.filter((x) => !x.correct).length;
+          const iv = !last.correct ? 1 : (streak >= 4 ? 14 : (streak === 3 ? 7 : (streak === 2 ? 3 : 1)));
+          cards[id] = {
+            st: "r", iv, due: addDays(last.date, iv), ease: SRS_CFG.initEase, reps: evs.length,
+            lapses, last: last.date, born: evs[0].date, mig: true, star: false, susp: false, leech: false
+          };
+        });
+        localStorage.setItem(SRS_KEY, JSON.stringify({ v: 1, cards }));
+      } catch (_) {}
+      return cards;
+    }
+
+    function loadDayLog() {
+      try {
+        const raw = localStorage.getItem(DAYLOG_KEY);
+        if (raw) {
+          const d = JSON.parse(raw);
+          if (d && d.days && typeof d.days === "object") return d.days;
+        }
+      } catch (_) {}
+      const days = {};
+      try {
+        const first = {};
+        (learnLog.events || []).forEach((e) => {
+          if (!e || !e.date) return;
+          const r = days[e.date] || (days[e.date] = { n: 0, ok: 0, newIntro: 0, rev: 0, extraNew: 0 });
+          r.n += 1;
+          if (e.correct) r.ok += 1;
+          const k = String(e.cardId);
+          if (!(k in first) || e.date < first[k]) first[k] = e.date;
+        });
+        Object.keys(first).forEach((k) => { if (days[first[k]]) days[first[k]].newIntro += 1; });
+        localStorage.setItem(DAYLOG_KEY, JSON.stringify({ v: 1, days }));
+      } catch (_) {}
+      return days;
+    }
+    function saveDayLog() {
+      try { localStorage.setItem(DAYLOG_KEY, JSON.stringify({ v: 1, days: dayLog })); } catch (_) {}
+    }
     const WEEKLY_TARGET = 2; /* ~2 exposures per rolling 7-day week */
     const DIFF_LEVELS = ["아주쉬움", "쉬움", "어려움", "아주어려움"];
-    const DAILY_TARGET_OPTIONS = [12, 15, 18, 20, 25];
+    const DAILY_TARGET_OPTIONS = [5, 10, 12, 15, 18, 20, 25, 30, 40];
     const DEFAULT_DAILY_TARGET = 18;
     const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
     /* difficulty → base CEFR score (A1=0 … C2=5). 아주쉬움 ≈ A2–B1 경계 */
@@ -3194,6 +3547,8 @@
     let settings = loadSettings();
     let learnLog = loadLearnLog();
     let levelHistory = loadLevelHistory();
+    let srs = loadSrs();
+    let dayLog = loadDayLog();
     /* state must exist before rebuildCards() — accessing `state` in TDZ crashes the whole app */
     let state = null;
     let ALL_TOPICS = rebuildTopics();
@@ -3213,7 +3568,8 @@
       initialTotal: 0,
       done: false,
       completedBasicPass: false,
-      dailyIds: []
+      dailyIds: [],
+      grades: { 1: 0, 2: 0, 3: 0, 4: 0 }
     };
     let CARDS = rebuildCards();
 
@@ -3308,24 +3664,30 @@
     }
 
     function loadSettings() {
+      const def = { dailyTarget: DEFAULT_DAILY_TARGET, reviewLimit: 100, buttons: 4, weeklyOn: true, leechSuspend: true, starOnly: false };
       try {
         const raw = localStorage.getItem(SETTINGS_KEY);
-        if (!raw) return { dailyTarget: DEFAULT_DAILY_TARGET };
-        const data = JSON.parse(raw);
-        const t = Number(data && data.dailyTarget);
+        if (!raw) return def;
+        const data = JSON.parse(raw) || {};
+        const t = Number(data.dailyTarget);
+        const rl = Number(data.reviewLimit);
         return {
-          dailyTarget: DAILY_TARGET_OPTIONS.includes(t) ? t : DEFAULT_DAILY_TARGET
+          dailyTarget: DAILY_TARGET_OPTIONS.includes(t) ? t : DEFAULT_DAILY_TARGET,
+          reviewLimit: REVIEW_LIMIT_OPTIONS.includes(rl) ? rl : 100,
+          buttons: data.buttons === 2 ? 2 : 4,
+          weeklyOn: data.weeklyOn !== false,
+          leechSuspend: data.leechSuspend !== false,
+          starOnly: data.starOnly === true
         };
       } catch (_) {
-        return { dailyTarget: DEFAULT_DAILY_TARGET };
+        return def;
       }
     }
 
     function saveSettings() {
       try {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify({
-          dailyTarget: state.dailyTarget
-        }));
+        settings.dailyTarget = state.dailyTarget;
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
       } catch (_) {}
     }
 
@@ -3488,7 +3850,7 @@
       return fmt(a) + "–" + fmt(b);
     }
 
-    function logAnswerEvent(card, correct) {
+    function logAnswerEvent(card, correct, grade) {
       if (!card) return;
       const difficulty = getEffectiveDifficulty(card);
       const topics = Array.isArray(card.topics) ? card.topics.slice() : [];
@@ -3496,6 +3858,7 @@
         date: localDateKey(),
         cardId: String(card.id),
         correct: !!correct,
+        grade: grade || null,
         difficulty: difficulty,
         topics: topics,
         ts: Date.now()
@@ -3908,6 +4271,7 @@
     }
 
     function isWeeklyDue(cardId, today) {
+      if (typeof settings !== "undefined" && settings.weeklyOn === false) return false;
       const e = weeklyState[String(cardId)];
       if (!e) return false;
       /* Refresh week boundary without resetting when only checking */
@@ -3922,7 +4286,8 @@
           ? false
           : c.topics.some((t) => state.topics.includes(t));
         const diffOk = state.filter === "전체" || getEffectiveDifficulty(c) === state.filter;
-        return topicOk && diffOk;
+        const starOk = !settings.starOnly || isStar(c.id);
+        return topicOk && diffOk && starOk;
       });
     }
 
@@ -3931,39 +4296,43 @@
         state.deckSource,
         state.filter,
         [...state.topics].sort().join("|"),
-        String(state.dailyTarget)
+        String(state.dailyTarget),
+        settings.starOnly ? "star" : "all"
       ].join("::");
     }
 
     function buildDailyDeck() {
       const today = localDateKey();
       state.dailyDate = today;
-      const filtered = filteredDeck();
-      const byId = Object.fromEntries(filtered.map((c) => [c.id, c]));
+      const filtered = filteredDeck().filter((c) => !isSusp(c.id));
+      const day = dayRec(today);
+      const newBudget = Math.max(0, state.dailyTarget + (day.extraNew || 0) - (day.newIntro || 0));
+      const revBudget = Math.max(0, settings.reviewLimit - (day.rev || 0));
+      const byId = (a, b) => String(a.id).localeCompare(String(b.id), "en");
 
-      /* Due weekly reviews first (stable order by id) */
-      const due = filtered
-        .filter((c) => isWeeklyDue(c.id, today))
-        .sort((a, b) => String(a.id).localeCompare(String(b.id), "en"));
+      /* 학습중/재학습 카드(오늘까지) → 복습 차례 카드(밀린 순, 한도) → 주간 복습 → 신규(날짜 시드, 한도) */
+      const learning = filtered.filter((c) => {
+        const e = srsEntry(c.id);
+        return e && (e.st === "l" || e.st === "x") && e.due <= today;
+      }).sort(byId);
+      const reviews = filtered.filter((c) => {
+        const e = srsEntry(c.id);
+        return e && e.st === "r" && e.due <= today;
+      }).sort((a, b) => {
+        const da = srsEntry(a.id).due, db = srsEntry(b.id).due;
+        return da < db ? -1 : da > db ? 1 : byId(a, b);
+      }).slice(0, revBudget);
+      const weeklyDue = filtered.filter((c) => isWeeklyDue(c.id, today)).sort(byId);
 
-      /* Date-seeded shuffle of the rest for today's fresh mix */
       const seed = today + "|" + filterSignature();
-      const shuffled = seededShuffle(filtered, seed);
+      const fresh = seededShuffle(filtered.filter((c) => srsKind(c.id) === "new"), seed).slice(0, newBudget);
 
       const seen = new Set();
       const daily = [];
-      due.forEach((c) => {
-        if (!seen.has(c.id)) {
-          seen.add(c.id);
-          daily.push(c);
-        }
-      });
-      shuffled.forEach((c) => {
-        if (daily.length >= state.dailyTarget) return;
-        if (!seen.has(c.id)) {
-          seen.add(c.id);
-          daily.push(c);
-        }
+      [learning, reviews, weeklyDue, fresh].forEach((list) => {
+        list.forEach((c) => {
+          if (!seen.has(c.id)) { seen.add(c.id); daily.push(c); }
+        });
       });
 
       /* Final order: seed-shuffle the selected set so due cards mix in, but stably */
@@ -4010,7 +4379,8 @@
           wrong: state.wrong,
           initialTotal: state.initialTotal,
           done: state.done,
-          completedBasicPass: state.completedBasicPass
+          completedBasicPass: state.completedBasicPass,
+          grades: state.grades
         }));
       } catch (_) {}
     }
@@ -4069,6 +4439,7 @@
         state.dailyDate = data.dailyDate || localDateKey();
         state.done = false;
         state.completedBasicPass = !!data.completedBasicPass;
+        state.grades = Object.assign({ 1: 0, 2: 0, 3: 0, 4: 0 }, data.grades || {});
         return true;
       } catch (_) {
         clearSession();
@@ -4244,6 +4615,8 @@
       state.flipped = false;
       state.correct = 0;
       state.wrong = 0;
+      state.grades = { 1: 0, 2: 0, 3: 0, 4: 0 };
+      undoStack.length = 0;
       state.initialTotal = (state.current ? 1 : 0) + state.queue.length;
       state.done = state.initialTotal === 0;
       saveSession();
@@ -4279,6 +4652,7 @@
       if (state.wrong > 0) bits.push("틀림 재큐 " + state.wrong);
       bits.push("오늘 세트");
       elSetText(els.reviewLabel, bits.join(" · "));
+      updateSrsCounts();
     }
 
     function updateDeckMeta() {
@@ -4302,7 +4676,7 @@
       if (els.dailyMeta) {
         els.dailyMeta.innerHTML =
           "오늘 <strong>" + setN + "</strong>장" +
-          " · 목표 " + state.dailyTarget +
+          " · 신규 한도 " + state.dailyTarget +
           " · 주간 복습 예정 <strong>" + dueN + "</strong>장" +
           " · 필터 " + filteredN + "장";
       }
@@ -4326,30 +4700,9 @@
       });
     }
 
-    function insertForReview(card, target) {
-      const delay = Math.min(REVIEW_DELAY, state.queue.length);
-      state.queue.splice(delay, 0, { id: card.id, target, card, weekly: true });
-    }
-
-    function markCorrect() {
-      if (!state.current || !state.flipped) return;
-      const today = localDateKey();
-      logAnswerEvent(state.current, true);
-      recordExposure(state.current.id, today);
-      scheduleAfterCorrect(state.current.id, today);
-      state.correct += 1;
-      advance();
-    }
-
-    function markWrong() {
-      if (!state.current || !state.flipped) return;
-      const today = localDateKey();
-      logAnswerEvent(state.current, false);
-      recordExposure(state.current.id, today);
-      scheduleAfterWrong(state.current.id, today);
-      state.wrong += 1;
-      insertForReview(state.current, state.currentTarget || pickTarget());
-      advance();
+    function insertForReview(card, target, delay) {
+      const d = Math.min(delay || REVIEW_DELAY, state.queue.length);
+      state.queue.splice(d, 0, { id: card.id, target, card, weekly: true });
     }
 
     function advance() {
@@ -4526,10 +4879,7 @@
         : "";
 
       const answerControls = state.flipped ? `
-        <div class="actions" id="actions">
-          <button type="button" class="btn btn-wrong" id="btnWrong">틀림</button>
-          <button type="button" class="btn btn-right" id="btnRight">맞음</button>
-        </div>
+        ${rateBarHtml(card)}
         <div class="diff-setter" id="diffSetter">
           <div class="diff-setter-label">이 문장 난이도</div>
           <div class="diff-setter-row">
@@ -4547,6 +4897,7 @@
       `;
 
       els.stage.innerHTML = `
+        ${cardToolsHtml(card)}
         <button type="button" class="card-scene" id="cardScene" aria-label="카드 뒤집기">
           <div class="card${flippedClass}" id="flashcard">
             <div class="card-face front">
@@ -4594,20 +4945,7 @@
           cardEl.style.minHeight = backEl.scrollHeight + "px";
         }
       } catch (_) {}
-      const btnWrong = document.getElementById("btnWrong");
-      const btnRight = document.getElementById("btnRight");
-      if (btnWrong) {
-        btnWrong.addEventListener("click", (e) => {
-          e.stopPropagation();
-          markWrong();
-        });
-      }
-      if (btnRight) {
-        btnRight.addEventListener("click", (e) => {
-          e.stopPropagation();
-          markCorrect();
-        });
-      }
+      /* 평가 버튼·도구 버튼은 stage 클릭 위임으로 처리 (아래 UI 블록) */
       const diffSetter = document.getElementById("diffSetter");
       if (diffSetter) {
         diffSetter.querySelectorAll("[data-diff]").forEach((btn) => {
@@ -4644,6 +4982,7 @@
             <div class="cell"><strong>${state.wrong}</strong>틀림(복습)</div>
             <div class="cell"><strong>${state.filter}</strong>난이도</div>
           </div>
+          ${summaryExtraHtml()}
           <p>${state.mode === "basic"
             ? "오늘 세트를 마쳤어요. 맞힌 카드도 <strong>주간 복습</strong>으로 이번 주에 한 번 더 나올 수 있어요. 미국식·격식체·영국식을 섞어 보는 <strong>혼합 재학습</strong>도 추천해요."
             : "오늘 세트의 틀린 카드까지 다시 맞춰 냈어요. 주간 복습은 맞혀도 주에 약 2번 나옵니다. 수고했어요!"}</p>
@@ -4678,6 +5017,7 @@
 
     function renderEmpty() {
       if (!els.stage) return;
+      if (state.done && state.initialTotal === 0 && filteredDeck().length > 0) { renderCaughtUp(); return; }
       els.stage.innerHTML = `
         <div class="empty">
           <h2>카드가 없어요</h2>
@@ -4719,6 +5059,7 @@
         updateCsvStatus();
         renderLevelReport();
         updateStartButton();
+        renderSrsPanels();
         elSetDisplay(els.progressWrap, state.done && state.initialTotal === 0 ? "none" : "");
 
         if (state.done && state.initialTotal === 0) {
@@ -5022,19 +5363,541 @@
         .replace(/"/g, "&quot;");
     }
 
-    document.addEventListener("keydown", (e) => {
-      if (e.target && /input|textarea|select/i.test(e.target.tagName)) return;
-      if (e.target && e.target.closest && e.target.closest(".tts-btn")) return;
-      if (e.key === " " || e.key === "Enter") {
-        if (!state.flipped && state.current && !state.done) {
-          e.preventDefault();
-          flipCard();
+
+    /* ===== Anki식 학습 UI: 평가 4단계 · 되돌리기 · 별표/중지 · 통계 · 백업 ===== */
+    function srsEntry(id) { return srs[String(id)] || null; }
+    function isSusp(id) { const e = srsEntry(id); return !!(e && e.susp); }
+    function isStar(id) { const e = srsEntry(id); return !!(e && e.star); }
+    function srsKind(id) {
+      const e = srsEntry(id);
+      if (!e || e.st === "n") return "new";
+      return e.st === "r" ? "rev" : "learn";
+    }
+    function dayRec(date) {
+      return dayLog[date] || (dayLog[date] = { n: 0, ok: 0, newIntro: 0, rev: 0, extraNew: 0 });
+    }
+    function cloneJson(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+
+    let toastTimer = null;
+    function toast(msg) {
+      const t = document.getElementById("toast");
+      if (!t) return;
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove("show"), 2600);
+    }
+
+    function pushUndo(card, label) {
+      const id = String(card.id);
+      const today = localDateKey();
+      undoStack.push({
+        label,
+        id,
+        today,
+        srsPrev: cloneJson(srs[id]),
+        weeklyPrev: cloneJson(weeklyState[id]),
+        dayPrev: cloneJson(dayLog[today]),
+        evLen: learnLog.events.length,
+        grades: cloneJson(state.grades),
+        snap: {
+          queue: state.queue.map((q) => Object.assign({}, q)),
+          current: state.current,
+          currentTarget: state.currentTarget,
+          currentWeekly: state.currentWeekly,
+          correct: state.correct,
+          wrong: state.wrong,
+          initialTotal: state.initialTotal,
+          done: state.done,
+          completedBasicPass: state.completedBasicPass
         }
-      } else if ((e.key === "1" || e.key === "ArrowLeft") && state.flipped) {
-        markWrong();
-      } else if ((e.key === "2" || e.key === "ArrowRight") && state.flipped) {
-        markCorrect();
+      });
+      if (undoStack.length > 30) undoStack.shift();
+    }
+
+    function undoLast() {
+      const u = undoStack.pop();
+      if (!u) { toast("되돌릴 동작이 없어요"); return; }
+      if (u.srsPrev == null) delete srs[u.id]; else srs[u.id] = u.srsPrev;
+      if (u.weeklyPrev == null) delete weeklyState[u.id]; else weeklyState[u.id] = u.weeklyPrev;
+      if (u.dayPrev == null) delete dayLog[u.today]; else dayLog[u.today] = u.dayPrev;
+      if (learnLog.events.length > u.evLen) learnLog.events.length = u.evLen;
+      saveSrs(); saveWeeklyState(); saveDayLog(); saveLearnLog();
+      state.queue = u.snap.queue;
+      state.current = u.snap.current;
+      state.currentTarget = u.snap.currentTarget;
+      state.currentWeekly = u.snap.currentWeekly;
+      state.correct = u.snap.correct;
+      state.wrong = u.snap.wrong;
+      state.initialTotal = u.snap.initialTotal;
+      state.done = u.snap.done;
+      state.completedBasicPass = u.snap.completedBasicPass;
+      state.grades = u.grades || { 1: 0, 2: 0, 3: 0, 4: 0 };
+      state.flipped = !!state.current;
+      saveSession();
+      render();
+      toast("되돌렸어요 · " + (u.label || "직전 동작"));
+    }
+
+    function rate(grade) {
+      if (!state.current || !state.flipped || state.done) return;
+      if (settings.buttons === 2 && (grade === 2 || grade === 4)) return;
+      const card = state.current;
+      const id = String(card.id);
+      const today = localDateKey();
+      const prev = srs[id] || null;
+      const names = { 1: "다시", 2: "어려움", 3: "좋음", 4: "쉬움" };
+      pushUndo(card, names[grade]);
+      const res = srsNext(card.id, prev, grade, today);
+      let requeue = res.requeue;
+      if (res.leechNew && settings.leechSuspend) { res.entry.susp = true; requeue = 0; }
+      srs[id] = res.entry;
+      saveSrs();
+
+      const ok = grade >= 2;
+      const day = dayRec(today);
+      day.n += 1;
+      if (ok) day.ok += 1;
+      if (!prev || prev.st === "n") day.newIntro += 1;
+      else if (prev.st === "r") day.rev += 1;
+      saveDayLog();
+
+      state.grades[grade] = (state.grades[grade] || 0) + 1;
+      logAnswerEvent(card, ok, grade);
+      const hardRepeat = grade === 2 && requeue > 0;
+      if (!hardRepeat) {
+        recordExposure(card.id, today);
+        if (ok) scheduleAfterCorrect(card.id, today);
+        else scheduleAfterWrong(card.id, today);
       }
+      if (grade === 1) state.wrong += 1;
+      else if (!hardRepeat) state.correct += 1;
+      if (requeue > 0) insertForReview(card, state.currentTarget || pickTarget(), requeue);
+      if (res.leechNew) {
+        toast(settings.leechSuspend
+          ? "🩸 리치 카드: " + SRS_CFG.leech + "번 이상 틀려서 일시중지했어요 (통계에서 해제)"
+          : "🩸 리치 카드로 표시했어요 (계속 틀리는 카드)");
+      }
+      advance();
+    }
+    function markWrong() { rate(1); }
+    function markCorrect() { rate(3); }
+
+    function toggleStar() {
+      if (!state.current) return;
+      const id = String(state.current.id);
+      const e = srs[id] ? srs[id] : { st: "n", iv: 0, due: localDateKey(), ease: SRS_CFG.initEase, reps: 0, lapses: 0, last: null, star: false, susp: false, leech: false };
+      e.star = !e.star;
+      srs[id] = e;
+      saveSrs();
+      toast(e.star ? "★ 별표 카드로 표시했어요" : "별표를 해제했어요");
+      render();
+    }
+    function suspendCurrent() {
+      if (!state.current) return;
+      const card = state.current;
+      const id = String(card.id);
+      pushUndo(card, "일시중지");
+      const e = srs[id] ? srs[id] : { st: "n", iv: 0, due: localDateKey(), ease: SRS_CFG.initEase, reps: 0, lapses: 0, last: null, star: false, susp: false, leech: false };
+      e.susp = true;
+      srs[id] = e;
+      saveSrs();
+      state.queue = state.queue.filter((q) => String(q.id) !== id);
+      state.initialTotal = Math.max(0, state.initialTotal - 1);
+      toast("⏸ 일시중지했어요 · 되돌리기(Z) 또는 통계에서 해제");
+      advance();
+    }
+
+    function rateBarHtml(card) {
+      const prev = srsEntry(card.id);
+      const labels = srsPreview(card.id, prev, localDateKey());
+      const b = (cls, domId, grade, name, lab) =>
+        '<button type="button" class="rate-btn ' + cls + '" id="' + domId + '" data-grade="' + grade + '">' +
+        "<span>" + name + "</span><small>" + escapeHtml(lab) + "</small></button>";
+      if (settings.buttons === 2) {
+        return '<div class="actions rate-bar rate2" id="actions">' +
+          b("r-again", "btnWrong", 1, "틀림", labels[0]) + b("r-good", "btnRight", 3, "맞음", labels[2]) +
+          '</div><div class="kbd-hint">키보드: 1 틀림 · 2 맞음 · Space 맞음 · Z 되돌리기</div>';
+      }
+      return '<div class="actions rate-bar rate4" id="actions">' +
+        b("r-again", "btnWrong", 1, "다시", labels[0]) + b("r-hard", "btnHard", 2, "어려움", labels[1]) +
+        b("r-good", "btnRight", 3, "좋음", labels[2]) + b("r-easy", "btnEasy", 4, "쉬움", labels[3]) +
+        '</div><div class="kbd-hint">키보드: 1 다시 · 2 어려움 · 3 좋음 · 4 쉬움 · Space 좋음 · Z 되돌리기 · S 별표 · P 중지</div>';
+    }
+    function cardToolsHtml(card) {
+      const star = isStar(card.id);
+      return '<div class="card-tools">' +
+        '<button type="button" id="btnUndo"' + (undoStack.length ? "" : " disabled") + ' aria-label="직전 평가 되돌리기">↩︎ 되돌리기</button>' +
+        '<div class="tools-right">' +
+        '<button type="button" id="btnStar" class="' + (star ? "on" : "") + '" aria-pressed="' + (star ? "true" : "false") + '" aria-label="별표">' + (star ? "★" : "☆") + " 별표</button>" +
+        '<button type="button" id="btnSusp" aria-label="이 카드 일시중지">⏸ 중지</button>' +
+        "</div></div>";
+    }
+
+    function tomorrowDueCount() {
+      const t = addDays(localDateKey(), 1);
+      return CARDS.filter((c) => { const e = srsEntry(c.id); return e && e.st === "r" && !e.susp && e.due <= t; }).length;
+    }
+    function newLeftCount() {
+      return filteredDeck().filter((c) => srsKind(c.id) === "new" && !isSusp(c.id)).length;
+    }
+    function summaryExtraHtml() {
+      const g = state.grades || {};
+      const gl = settings.buttons === 2
+        ? "맞음 " + ((g[2] || 0) + (g[3] || 0) + (g[4] || 0)) + " · 틀림 " + (g[1] || 0)
+        : "다시 " + (g[1] || 0) + " · 어려움 " + (g[2] || 0) + " · 좋음 " + (g[3] || 0) + " · 쉬움 " + (g[4] || 0);
+      const nl = newLeftCount();
+      return '<div class="sum-extra">평가: <strong>' + gl + "</strong><br/>내일까지 복습 예정: <strong>" + tomorrowDueCount() + "장</strong>" +
+        " · 남은 신규 카드: <strong>" + nl + "장</strong></div>" +
+        (nl > 0 ? '<button type="button" class="btn-ghost" id="btnMoreNew">신규 10장 더 학습</button>' : "") +
+        '<button type="button" class="btn-ghost" id="btnUndo"' + (undoStack.length ? "" : " disabled") + ">↩︎ 마지막 평가 되돌리기</button>";
+    }
+    function renderCaughtUp() {
+      const today = localDateKey();
+      const day = dayRec(today);
+      const nl = newLeftCount();
+      const dueNow = filteredDeck().filter((c) => { const e = srsEntry(c.id); return e && e.st === "r" && !e.susp && e.due <= today; }).length;
+      els.stage.innerHTML =
+        '<div class="empty caught"><h2>오늘 할 카드를 모두 끝냈어요 🎉</h2>' +
+        "<p>오늘 " + day.n + "장 학습 · 정답률 " + (day.n ? Math.round((day.ok / day.n) * 100) : 0) + "%<br/>" +
+        "내일까지 복습 예정 " + tomorrowDueCount() + "장 · 남은 신규 " + nl + "장" +
+        (dueNow > 0 ? "<br/>복습 한도(" + settings.reviewLimit + ")에 도달해서 " + dueNow + "장이 남았어요. 설정에서 한도를 늘릴 수 있어요." : "") +
+        "</p>" +
+        (nl > 0 ? '<button type="button" class="btn-primary" id="btnMoreNew">신규 10장 더 학습</button>' : "") +
+        '<button type="button" class="btn-ghost" id="btnGoStats">📊 통계 보기</button>' +
+        '<button type="button" class="btn-ghost" id="btnUndo"' + (undoStack.length ? "" : " disabled") + ">↩︎ 마지막 평가 되돌리기</button></div>";
+    }
+
+    function updateSrsCounts() {
+      const el = document.getElementById("srsCounts");
+      if (!el) return;
+      const c = { new: 0, learn: 0, rev: 0 };
+      const ids = (state.current ? [state.current.id] : []).concat(state.queue.map((q) => q.id));
+      ids.forEach((id) => { c[srsKind(id) === "rev" ? "rev" : srsKind(id)] += 1; });
+      const cur = state.current && !state.done ? srsKind(state.current.id) : null;
+      el.innerHTML =
+        '<span class="c-new' + (cur === "new" ? " cur" : "") + '">신규 ' + c.new + "</span>" +
+        '<span class="c-learn' + (cur === "learn" ? " cur" : "") + '">학습중 ' + c.learn + "</span>" +
+        '<span class="c-rev' + (cur === "rev" ? " cur" : "") + '">복습 ' + c.rev + "</span>";
+    }
+
+    function streakInfo() {
+      const keys = Object.keys(dayLog).filter((k) => dayLog[k] && dayLog[k].n > 0).sort();
+      const set = new Set(keys);
+      const today = localDateKey();
+      let cur = 0;
+      let d = set.has(today) ? today : addDays(today, -1);
+      while (set.has(d)) { cur += 1; d = addDays(d, -1); }
+      let best = 0, run = 0, prevK = null;
+      keys.forEach((k) => {
+        run = prevK && daysBetween(prevK, k) === 1 ? run + 1 : 1;
+        if (run > best) best = run;
+        prevK = k;
+      });
+      return { cur, best, total: keys.length };
+    }
+
+    function lastBackupDays() {
+      try {
+        const m = JSON.parse(localStorage.getItem(BACKUP_META_KEY) || "null");
+        if (m && m.last) return Math.floor((Date.now() - m.last) / 86400000);
+      } catch (_) {}
+      return null;
+    }
+    function updateDashboard() {
+      const el = document.getElementById("dashStats");
+      if (!el) return;
+      const today = localDateKey();
+      const day = dayLog[today] || { n: 0, ok: 0 };
+      const s = streakInfo();
+      const dueAll = CARDS.filter((c) => { const e = srsEntry(c.id); return e && e.st !== "n" && !e.susp && e.due <= today; }).length;
+      el.innerHTML =
+        "<span>🔥 연속 <strong>" + s.cur + "</strong>일</span>" +
+        "<span>오늘 <strong>" + day.n + "</strong>장" + (day.n ? " · 정답 " + Math.round((day.ok / day.n) * 100) + "%" : "") + "</span>" +
+        "<span>복습 대기 <strong>" + dueAll + "</strong></span>";
+      const nudge = document.getElementById("dashNudge");
+      if (nudge) {
+        const hasData = Object.keys(srs).length > 0;
+        const days = lastBackupDays();
+        if (hasData && (days === null || days >= 7)) {
+          nudge.hidden = false;
+          nudge.textContent = days === null
+            ? "💾 아직 백업한 적이 없어요. 학습 기록은 이 브라우저에만 저장돼요 — 설정에서 백업 파일을 저장해 두세요."
+            : "💾 마지막 백업이 " + days + "일 전이에요. 설정에서 새 백업을 저장해 두세요.";
+        } else {
+          nudge.hidden = true;
+        }
+      }
+    }
+
+    function renderStats() {
+      const body = document.getElementById("statsBody");
+      const panel = document.getElementById("statsPanel");
+      if (!body || !panel || !panel.open) return;
+      const today = localDateKey();
+      const day = dayLog[today] || { n: 0, ok: 0, newIntro: 0, rev: 0 };
+      const s = streakInfo();
+      /* 카드 성숙도 (전체 덱 기준) */
+      const m = { fresh: 0, learn: 0, young: 0, mature: 0, susp: 0 };
+      CARDS.forEach((c) => {
+        const e = srsEntry(c.id);
+        if (e && e.susp) { m.susp += 1; return; }
+        if (!e || e.st === "n") m.fresh += 1;
+        else if (e.st !== "r") m.learn += 1;
+        else if (e.iv >= SRS_CFG.matureDays) m.mature += 1;
+        else m.young += 1;
+      });
+      const total = Math.max(1, CARDS.length);
+      const pct = (n) => (n / total * 100).toFixed(2) + "%";
+      /* 히트맵: 최근 12주 */
+      const dt = parseDateKey(today);
+      const start = addDays(today, -(dt.getDay() + 7 * 11));
+      let heat = "";
+      for (let i = 0; i < 84; i++) {
+        const k = addDays(start, i);
+        if (k > today) { heat += '<i class="fut"></i>'; continue; }
+        const n = (dayLog[k] && dayLog[k].n) || 0;
+        const lv = n === 0 ? 0 : n < 5 ? 1 : n < 15 ? 2 : n < 30 ? 3 : 4;
+        heat += '<i class="' + (lv ? "l" + lv : "") + (k === today ? " today" : "") + '" title="' + k.slice(5).replace("-", "/") + " · " + n + '장"></i>';
+      }
+      /* 향후 7일 복습 예정 */
+      const fc = [];
+      for (let i = 0; i < 7; i++) fc.push(0);
+      CARDS.forEach((c) => {
+        const e = srsEntry(c.id);
+        if (!e || e.susp || e.st === "n") return;
+        const d = Math.max(0, daysBetween(today, e.due));
+        if (d < 7) fc[d] += 1;
+      });
+      const fmax = Math.max(1, Math.max.apply(null, fc));
+      const wk = ["일", "월", "화", "수", "목", "금", "토"];
+      const fcHtml = fc.map((n, i) => {
+        const lab = i === 0 ? "오늘" : wk[(dt.getDay() + i) % 7];
+        return '<div><em>' + n + '</em><span style="height:' + Math.round((n / fmax) * 56) + 'px"></span>' + lab + "</div>";
+      }).join("");
+      const suspIds = Object.keys(srs).filter((k) => srs[k] && srs[k].susp);
+      const byId = {};
+      CARDS.forEach((c) => { byId[String(c.id)] = c; });
+      const suspHtml = suspIds.length
+        ? '<div class="susp-list">' + suspIds.slice(0, 40).map((k) => {
+          const c = byId[k];
+          const label = c ? c.meaningKo : k;
+          return '<div class="susp-item"><span>' + (srs[k].leech ? "🩸 " : "") + escapeHtml(label.length > 38 ? label.slice(0, 38) + "…" : label) +
+            '</span><button type="button" data-unsusp="' + escapeHtml(k) + '">해제</button></div>';
+        }).join("") + "</div>"
+        : '<div class="set-note">일시중지한 카드가 없어요.</div>';
+      const starN = CARDS.filter((c) => isStar(c.id)).length;
+      body.innerHTML =
+        '<div class="stats-body">' +
+        '<div class="st-grid">' +
+        '<div class="st-cell"><strong>' + day.n + '</strong>오늘 학습</div>' +
+        '<div class="st-cell"><strong>' + (day.n ? Math.round((day.ok / day.n) * 100) : 0) + '%</strong>오늘 정답률</div>' +
+        '<div class="st-cell"><strong>' + s.cur + '일</strong>연속 학습</div>' +
+        '<div class="st-cell"><strong>' + s.best + '일</strong>최장 연속</div>' +
+        '<div class="st-cell"><strong>' + s.total + '일</strong>총 학습일</div>' +
+        '<div class="st-cell"><strong>' + (day.newIntro || 0) + '</strong>오늘 신규</div>' +
+        "</div>" +
+        '<div><div class="st-title">최근 12주 학습 달력</div><div class="heat" id="heatmap">' + heat + "</div>" +
+        '<div class="heat-legend">적음 <i></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> 많음</div></div>' +
+        '<div><div class="st-title">카드 성숙도 (전체 ' + CARDS.length + '장)</div>' +
+        '<div class="stack" id="maturityBar"><span class="s-new" style="width:' + pct(m.fresh) + '"></span><span class="s-learn" style="width:' + pct(m.learn) + '"></span><span class="s-young" style="width:' + pct(m.young) + '"></span><span class="s-mature" style="width:' + pct(m.mature) + '"></span><span class="s-susp" style="width:' + pct(m.susp) + '"></span></div>' +
+        '<div class="legend"><span><i class="dot" style="background:#6b9bd2"></i>신규 <b>' + m.fresh + '</b></span><span><i class="dot" style="background:#d98080"></i>학습중 <b>' + m.learn + '</b></span><span><i class="dot" style="background:#9bd0b0"></i>어린 카드(' + SRS_CFG.matureDays + '일 미만) <b>' + m.young + '</b></span><span><i class="dot" style="background:#2d7a4f"></i>성숙(' + SRS_CFG.matureDays + '일 이상) <b>' + m.mature + '</b></span><span><i class="dot" style="background:#b8ad9c"></i>중지 <b>' + m.susp + "</b></span></div></div>" +
+        '<div><div class="st-title">앞으로 7일 복습 예정</div><div class="fc">' + fcHtml + "</div></div>" +
+        '<div><div class="st-title">⏸ 일시중지 카드 (' + suspIds.length + '장) · ★ 별표 ' + starN + "장</div>" + suspHtml + "</div>" +
+        '<div class="set-note">기준: 성숙 카드 = 복습 간격 21일 이상(Anki 정의). 통계는 이 브라우저에 저장된 학습 기록으로 계산해요.</div>' +
+        "</div>";
+    }
+
+    function chipRow(container, items, activeVal, onPick) {
+      container.innerHTML = "";
+      items.forEach((it) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "chip" + (String(it.v) === String(activeVal) ? " active" : "");
+        btn.textContent = it.l;
+        btn.addEventListener("click", () => onPick(it.v));
+        container.appendChild(btn);
+      });
+    }
+    function renderSrsSettings() {
+      const set = (id) => document.getElementById(id);
+      if (!set("srsRowLimit")) return;
+      chipRow(set("srsRowLimit"), REVIEW_LIMIT_OPTIONS.map((n) => ({ v: n, l: n + "장" })), settings.reviewLimit, (v) => {
+        settings.reviewLimit = Number(v); saveSettings(); startSession({ resume: false });
+      });
+      chipRow(set("srsRowButtons"), [{ v: 4, l: "4단계 (다시·어려움·좋음·쉬움)" }, { v: 2, l: "2단계 (틀림·맞음)" }], settings.buttons, (v) => {
+        settings.buttons = Number(v); saveSettings(); render();
+      });
+      chipRow(set("srsRowWeekly"), [{ v: "on", l: "켬" }, { v: "off", l: "끔" }], settings.weeklyOn ? "on" : "off", (v) => {
+        settings.weeklyOn = v === "on"; saveSettings(); startSession({ resume: false });
+      });
+      chipRow(set("srsRowLeech"), [{ v: "on", l: "자동 중지" }, { v: "off", l: "표시만" }], settings.leechSuspend ? "on" : "off", (v) => {
+        settings.leechSuspend = v === "on"; saveSettings(); render();
+      });
+      chipRow(set("srsRowStar"), [{ v: "off", l: "전체 카드" }, { v: "on", l: "★ 별표만" }], settings.starOnly ? "on" : "off", (v) => {
+        settings.starOnly = v === "on"; saveSettings(); startSession({ resume: false });
+      });
+    }
+    function renderSrsPanels() {
+      updateDashboard();
+      renderSrsSettings();
+      renderStats();
+    }
+
+    /* ----- 백업 / 복원 (JSON) ----- */
+    function collectBackup() {
+      const data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.indexOf(APP_PREFIX) === 0 && k !== BACKUP_META_KEY) data[k] = localStorage.getItem(k);
+      }
+      return { app: APP_PREFIX.replace(/-$/, ""), format: 1, exportedAt: new Date().toISOString(), data };
+    }
+    function markBackedUp() {
+      try { localStorage.setItem(BACKUP_META_KEY, JSON.stringify({ last: Date.now() })); } catch (_) {}
+      updateDashboard();
+    }
+    function setBackupStatus(msg, isErr) {
+      const el = document.getElementById("backupStatus");
+      if (!el) return;
+      el.textContent = msg;
+      el.className = "csv-status" + (isErr ? " err" : " ok");
+    }
+    function downloadBackup() {
+      try {
+        const json = JSON.stringify(collectBackup(), null, 1);
+        const blob = new Blob([json], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = APP_PREFIX + "backup-" + localDateKey() + ".json";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+        markBackedUp();
+        setBackupStatus("백업 파일을 저장했어요 (" + Object.keys(collectBackup().data).length + "개 항목)");
+      } catch (err) { setBackupStatus("백업 실패: " + (err && err.message ? err.message : err), true); }
+    }
+    function copyBackup() {
+      const json = JSON.stringify(collectBackup());
+      const done = () => { markBackedUp(); setBackupStatus("백업 텍스트를 복사했어요. 메모 앱 등에 붙여 두세요."); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(json).then(done, () => setBackupStatus("복사에 실패했어요. 파일 저장을 이용해 주세요.", true));
+      } else {
+        setBackupStatus("이 브라우저는 복사를 지원하지 않아요. 파일 저장을 이용해 주세요.", true);
+      }
+    }
+    function restoreBackupText(text) {
+      let obj;
+      try { obj = JSON.parse(text); } catch (_) { throw new Error("JSON 형식이 아니에요."); }
+      if (!obj || obj.app !== APP_PREFIX.replace(/-$/, "") || !obj.data || typeof obj.data !== "object") {
+        throw new Error("이 앱의 백업 파일이 아니에요.");
+      }
+      const keys = Object.keys(obj.data).filter((k) => k.indexOf(APP_PREFIX) === 0 && typeof obj.data[k] === "string");
+      if (!keys.length) throw new Error("복원할 데이터가 없어요.");
+      if (!window.confirm("백업(" + String(obj.exportedAt || "").slice(0, 10) + ")으로 복원할까요?\n지금 이 기기의 학습 기록은 백업 내용으로 바뀝니다.")) return false;
+      const old = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.indexOf(APP_PREFIX) === 0 && k !== BACKUP_META_KEY) old.push(k);
+      }
+      old.forEach((k) => localStorage.removeItem(k));
+      keys.forEach((k) => localStorage.setItem(k, obj.data[k]));
+      return true;
+    }
+
+    /* ----- 이벤트 연결 ----- */
+    els.stage.addEventListener("click", (e) => {
+      const t = e.target && e.target.closest ? e.target.closest("[data-grade], #btnUndo, #btnStar, #btnSusp, #btnMoreNew, #btnGoStats") : null;
+      if (!t || !els.stage.contains(t) || t.disabled) return;
+      e.stopPropagation();
+      if (t.hasAttribute("data-grade")) rate(Number(t.getAttribute("data-grade")));
+      else if (t.id === "btnUndo") undoLast();
+      else if (t.id === "btnStar") toggleStar();
+      else if (t.id === "btnSusp") suspendCurrent();
+      else if (t.id === "btnMoreNew") {
+        const d = dayRec(localDateKey());
+        d.extraNew = (d.extraNew || 0) + 10;
+        saveDayLog();
+        startSession({ resume: false });
+      } else if (t.id === "btnGoStats") openStats();
+    });
+    function openStats() {
+      const p = document.getElementById("statsPanel");
+      if (!p) return;
+      p.open = true;
+      renderStats();
+      p.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    function openBackup() {
+      const g = document.getElementById("settingsGroup");
+      if (g) g.open = true;
+      const b = document.getElementById("backupPanel");
+      if (b) b.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    (function wirePanels() {
+      const sp = document.getElementById("statsPanel");
+      if (sp) {
+        sp.addEventListener("toggle", renderStats);
+        sp.addEventListener("click", (e) => {
+          const b = e.target && e.target.closest ? e.target.closest("[data-unsusp]") : null;
+          if (!b) return;
+          const id = b.getAttribute("data-unsusp");
+          if (srs[id]) { srs[id].susp = false; saveSrs(); }
+          toast("일시중지를 해제했어요");
+          renderStats(); updateDailyUI(); updateSrsCounts();
+        });
+      }
+      const on2 = (id, fn) => { const n = document.getElementById(id); if (n) n.addEventListener("click", fn); };
+      on2("btnOpenStats", openStats);
+      on2("btnOpenBackup", openBackup);
+      on2("btnBackupDownload", downloadBackup);
+      on2("btnBackupCopy", copyBackup);
+      const rf = document.getElementById("backupFile");
+      if (rf) rf.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            if (restoreBackupText(String(reader.result || ""))) { setBackupStatus("복원했어요. 다시 불러옵니다…"); setTimeout(() => location.reload(), 300); }
+          } catch (err) { setBackupStatus("복원 실패: " + (err && err.message ? err.message : err), true); }
+          e.target.value = "";
+        };
+        reader.onerror = () => setBackupStatus("파일을 읽을 수 없어요.", true);
+        reader.readAsText(file, "UTF-8");
+      });
+    })();
+
+    document.addEventListener("keydown", (e) => {
+      const t = e.target;
+      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || "")) return;
+      if (t && t.isContentEditable) return;
+      if (t && t.closest && t.closest(".tts-btn")) return;
+      const k = e.key;
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (k === "z" || k === "Z")) {
+        e.preventDefault(); undoLast(); return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const onControl = !!(t && t.closest && t.closest("button, a, summary, label")) && !(t.closest && t.closest("#stage"));
+      if (k === " " || k === "Enter") {
+        if (onControl) return;
+        if (state.current && !state.done) {
+          e.preventDefault();
+          if (!state.flipped) flipCard(); else rate(3);
+        }
+        return;
+      }
+      if (k === "ArrowLeft") { if (state.flipped) rate(1); return; }
+      if (k === "ArrowRight") { if (state.flipped) rate(3); return; }
+      if (k >= "1" && k <= "4") {
+        if (!state.flipped) return;
+        if (settings.buttons === 2) { if (k === "1") rate(1); else if (k === "2") rate(3); }
+        else rate(Number(k));
+        return;
+      }
+      if (k === "z" || k === "Z") { undoLast(); return; }
+      if (k === "s" || k === "S" || k === "*") { toggleStar(); return; }
+      if (k === "p" || k === "P") { suspendCurrent(); return; }
     });
 
 
